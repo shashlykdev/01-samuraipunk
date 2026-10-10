@@ -1,0 +1,7 @@
+Use case: precise-object-edit
+Asset type: Empty 2D cyberpunk walking-game environment background.
+Input images: Image 1 is the edit target.
+Primary request: Remove every small person, dark human silhouette and head-and-shoulder figure from every window, balcony and interior of this image, particularly the windows along the far left edge and the upper amber conservatories. Replace only those tiny figures with empty room furnishings, plants or the existing warm window lighting. Every window must be completely unoccupied.
+Invariants: Keep all architecture, balconies, plants, waterfalls, skyline, neon signs, framing, pixel art detail, colors, image dimensions, sidewalk, curb, wet road and reflections unchanged. Preserve the existing 16:9 composition and camera exactly. This is only removal of tiny background people.
+Constraints: No human figure or human silhouette anywhere. Do not add characters, new objects, text, UI, borders or labels. Opaque full background.
+

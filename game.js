@@ -1,5 +1,7 @@
-import { clamp, movementAxis, safeDelta, cameraTarget, districtIndex, advanceWalk, npcLane, movePlayer, wrapPedestrian, closestStop, restoreVisits } from './engine.js';
+import { clamp, movementAxis, safeDelta, cameraTarget, districtIndex, advanceWalk, npcLane, wrapPedestrian, closestStop, restoreVisits } from './engine.js';
 import { BLOCK_WIDTH, DISTRICTS, WORLD, START_X, NPC_ATLASES, HERO_WALK, STOPS as stops } from './world.js';
+import { HERO_ACTIONS, ENEMY_ATLAS, ENEMY_SPAWNS } from './world.js';
+import { COMBOS, createHero, createEnemy, requestJump, requestAttack, requestDodge, attackFrame, stepCombat } from './combat.js';
 
 const $ = id => document.getElementById(id);
 const canvas = $('scene');
@@ -8,8 +10,9 @@ const SAVE_KEY = 'neon-ronin-night-stops-v1';
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const keys = new Set();
 const touch = { left: false, right: false };
-const player = { x: START_X, direction: 1, phase: 0, moving: false };
-const state = { mode: 'loading', clock: 0, camera: 0, nearest: null, loaded: false, muted: true, elapsed: 0 };
+const player = createHero(START_X);
+const state = { mode: 'loading', clock: 0, camera: 0, nearest: null, loaded: false, muted: true, elapsed: 0,
+  hitstop: 0, shake: 0, district: 0, checkpoint: START_X, checkpointIndex: 0, won: false, traveling: false };
 const view = { width: innerWidth, height: innerHeight, worldWidth: 1672, worldHeight: 941, scale: 1, dpr: 1, cameraY: 0 };
 const art = {};
 const spritePixels = new WeakMap();
@@ -23,6 +26,12 @@ try { visits = restoreVisits(localStorage.getItem(SAVE_KEY), stops.map(stop => s
 catch { visits = new Set(); }
 
 let pedestrians = [];
+let enemies = [];
+let effects = [];
+let pickups = [];
+const checkpoints = new Set([0]);
+const restedStops = new Set();
+const districtLoads = new Map();
 const rain = Array.from({ length: 160 }, () => ({ x: Math.random(), y: Math.random(), depth: .3 + Math.random() * .7 }));
 
 async function loadImage(path) {
@@ -35,6 +44,21 @@ async function loadJson(path) {
   const response = await fetch(`./assets/${path}`);
   if (!response.ok) throw new Error(`Could not load ${path}`);
   return response.json();
+}
+function loadDistrict(index) {
+  if (index < 0 || index >= DISTRICTS.length) return Promise.resolve();
+  if (art.backgrounds?.[index]) return Promise.resolve(art.backgrounds[index]);
+  if (!districtLoads.has(index)) {
+    districtLoads.set(index, loadImage(`environments/${DISTRICTS[index].image}`).then(image => {
+      art.backgrounds[index] = image; districtLoads.delete(index); return image;
+    }).catch(error => { districtLoads.delete(index); throw error; }));
+  }
+  return districtLoads.get(index);
+}
+function prefetchDistricts(index) {
+  for (const next of [index - 1, index, index + 1, index + 2]) loadDistrict(next).catch(() => {});
+  // Only a small neighborhood needs decoded bitmaps on mobile.
+  for (let next = 0; next < art.backgrounds.length; next++) if (Math.abs(next - index) > 3) art.backgrounds[next] = null;
 }
 
 // Align the actual opaque heads and feet; transparent padding is never used as a body measurement.
@@ -90,8 +114,9 @@ function prepareSprite(image, metadata, type, defaultDirection) {
 
 async function loadCity() {
   try {
-    const [backgrounds, npcAtlases, results] = await Promise.all([
-      Promise.all(DISTRICTS.map(district => loadImage(`environments/${district.image}`))),
+    art.backgrounds = Array(DISTRICTS.length).fill(null);
+    const [, npcAtlases, results] = await Promise.all([
+      Promise.all([loadDistrict(0), loadDistrict(1)]),
       Promise.all(NPC_ATLASES.map(name => Promise.all([
         loadImage(`characters/pedestrians/${name}.png`), loadJson(`characters/pedestrians/${name}.json`)
       ]))),
@@ -100,15 +125,31 @@ async function loadCity() {
       loadImage(`characters/samurai/${HERO_WALK}.png`),
       loadJson(`characters/samurai/${HERO_WALK}.json`),
       loadImage('vehicles/elevated-train-v1.png'),
-      loadJson('vehicles/elevated-train-v1.json')
+      loadJson('vehicles/elevated-train-v1.json'),
+      loadImage(`characters/samurai/${HERO_ACTIONS}.png`), loadJson(`characters/samurai/${HERO_ACTIONS}.json`),
+      loadImage(`characters/enemies/${ENEMY_ATLAS}.png`), loadJson(`characters/enemies/${ENEMY_ATLAS}.json`)
       ])
     ]);
-    art.backgrounds = backgrounds;
     art.idle = prepareSprite(results[0], null, 'hero', 1);
     art.hero = prepareSprite(results[1], results[2], 'hero', 1);
     art.idle.height = 224 * art.idle.sourceHeight / art.idle.visualHeight;
     art.hero.height = 224 * art.hero.sourceHeight / art.hero.visualHeight;
     art.hero.worldCycle = art.hero.cycleDistance * art.hero.height / art.hero.sourceHeight;
+    art.actions = prepareSprite(results[5], results[6], 'hero', 1);
+    art.actions.height = 224 * art.actions.sourceHeight / results[6].body_height;
+    art.actionClips = results[6].animations;
+    art.enemies = Object.fromEntries(results[8].characters.map(character => {
+      const sprite = prepareSprite(results[7], character, 'person', 1);
+      sprite.height = 216 * sprite.sourceHeight / character.body_height;
+      sprite.clips = character.animations;
+      return [character.id, sprite];
+    }));
+    enemies = ENEMY_SPAWNS.map(spec => {
+      const foe = createEnemy(spec.id, spec.x, spec.type, spec.boss);
+      const sprite = art.enemies[foe.type];
+      foe.cycleDistance = sprite.cycleDistance * sprite.height / sprite.sourceHeight;
+      return foe;
+    });
     art.train = results[3];
     art.trainCrop = results[4].suggested_source_rectangle;
     const people = npcAtlases.flatMap(([image, metadata]) => metadata.characters.map(character => {
@@ -117,9 +158,11 @@ async function loadCity() {
       return { id: character.id, sprite, height: (character.visual_height ?? (umbrella ? 250 : 210)) * sprite.sourceHeight / sprite.visualHeight };
     }));
     if (new Set(people.map(person => person.id)).size < 15) throw new Error('The city needs at least fifteen distinct pedestrians.');
-    pedestrians = people.map((person, index) => {
+    const crowdCount = DISTRICTS.length * 3;
+    pedestrians = Array.from({ length: crowdCount }, (_, index) => {
+      const person = people[index % people.length];
       const size = .84 + (index % 3) * .025;
-      return { ...person, x: (index + .3) / people.length * WORLD.width,
+      return { ...person, x: (index + .3) / crowdCount * WORLD.width,
         direction: index % 2 ? 1 : -1, speed: 26 + ((index * 5) % 11), phase: index * .79,
         size, ground: npcLane(WORLD.ground, index),
         cycleDistance: person.sprite.cycleDistance * person.height * size / person.sprite.sourceHeight };
@@ -180,6 +223,118 @@ function footShadows(sprite, phase, x, ground, height, direction) {
     ctx.beginPath(); ctx.ellipse(footX, ground + 1, Math.max(3, foot.width * scale * .53), 2, 0, 0, Math.PI * 2); ctx.fill();
   }
 }
+function drawEnemy(foe) {
+  if (foe.health <= 0 && foe.deathTime <= 0) return;
+  const sprite = art.enemies[foe.type];
+  let phase = sprite.clips.guard[0];
+  if (foe.mode === 'walk') phase = sprite.clips.walk[Math.floor(foe.phase) % 4];
+  if (foe.mode === 'windup') phase = sprite.clips.windup[0];
+  if (foe.mode === 'strike') phase = sprite.clips.strike[0];
+  if (foe.stun > 0 || foe.health <= 0) phase = sprite.clips.hurt[0];
+  const height = sprite.height * (foe.boss ? 1.12 : 1);
+  shadow(foe.x, WORLD.ground, 31, .24);
+  if (foe.mode === 'windup') {
+    const charge = clamp(foe.timer / foe.windup, 0, 1);
+    ctx.strokeStyle = `rgba(255,105,103,${.4 + charge * .55})`; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.ellipse(foe.x, WORLD.ground + 2, 32 + charge * 15, 7, 0, 0, Math.PI * 2); ctx.stroke();
+    ctx.fillStyle = '#ffc493'; ctx.font = 'bold 25px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('!', foe.x, WORLD.ground - 244);
+  }
+  ctx.save();
+  if (foe.health <= 0) ctx.globalAlpha = foe.deathTime / .45;
+  if (foe.flash > .02) ctx.filter = 'brightness(1.65)';
+  footShadows(sprite, phase, foe.x, WORLD.ground, height, foe.direction);
+  drawSprite(sprite, phase, foe.x, WORLD.ground, height, foe.direction);
+  ctx.restore();
+  if (foe.health > 0 && (foe.health < foe.maxHealth || Math.abs(foe.x - player.x) < 420)) {
+    const y = WORLD.ground - (foe.boss ? 267 : 239), width = foe.boss ? 100 : 64;
+    ctx.fillStyle = '#080b14cc'; ctx.fillRect(foe.x - width / 2, y, width, 5);
+    ctx.fillStyle = foe.boss ? '#f1c683' : '#df687b'; ctx.fillRect(foe.x - width / 2, y, width * foe.health / foe.maxHealth, 5);
+    ctx.font = '8px monospace'; ctx.textAlign = 'center'; ctx.fillStyle = '#f0d9cb';
+    ctx.fillText(foe.boss ? 'GATE COMMANDER' : foe.type.toUpperCase(), foe.x, y - 7);
+  }
+}
+function drawHero() {
+  let sprite = art.idle, phase = 0;
+  if (player.hurt > 0) { sprite = art.actions; phase = art.actionClips.hurt[0]; }
+  else if (player.dodge > 0) { sprite = art.actions; phase = art.actionClips.crouch[0]; }
+  else if (player.attack) { sprite = art.actions; phase = art.actionClips[COMBOS[player.attack.stage].animation][attackFrame(player.attack)]; }
+  else if (player.y > 0) { sprite = art.actions; phase = art.actionClips.jump[0]; }
+  else if (player.landing > 0) { sprite = art.actions; phase = art.actionClips.land[0]; }
+  else if (player.moving) { sprite = art.hero; phase = player.phase; }
+  shadow(player.x, WORLD.ground, Math.max(20, 34 - player.y * .07), .25 - player.y * .0006);
+  if (player.dodge > 0) {
+    ctx.save(); ctx.globalAlpha = .15;
+    drawSprite(sprite, phase, player.x - player.direction * 25, WORLD.ground, sprite.height, player.direction);
+    ctx.restore();
+  }
+  ctx.save();
+  if (player.blink > .1 && player.dodge <= 0 && Math.floor(state.clock * 16) % 2) ctx.globalAlpha = .5;
+  if (!player.y) footShadows(sprite, phase, player.x, WORLD.ground, sprite.height, player.direction);
+  drawSprite(sprite, phase, player.x, WORLD.ground - player.y, sprite.height, player.direction);
+  ctx.restore();
+  const attack = player.attack;
+  if (attack) {
+    const move = COMBOS[attack.stage];
+    if (attack.time >= move.activeStart && attack.time <= move.activeEnd) {
+      const progress = (attack.time - move.activeStart) / (move.activeEnd - move.activeStart);
+      ctx.save(); ctx.translate(player.x, WORLD.ground - player.y - 125); ctx.scale(player.direction, 1);
+      ctx.globalAlpha = Math.sin(progress * Math.PI) * .85;
+      ctx.lineCap = 'round'; ctx.lineWidth = attack.stage === 2 ? 16 : 10;
+      ctx.strokeStyle = attack.stage === 2 ? '#f1bc8a' : '#78dbe8';
+      const start = attack.stage === 1 ? .7 : -1.05, end = attack.stage === 1 ? -.95 : .75;
+      ctx.beginPath(); ctx.arc(0, 0, move.reach * .82, start, end, attack.stage === 1); ctx.stroke();
+      ctx.lineWidth = 2.5; ctx.strokeStyle = '#fff5df'; ctx.stroke(); ctx.restore();
+    }
+  }
+}
+function drawCombatEffects() {
+  for (const item of pickups) {
+    const y = WORLD.ground - 25 + Math.sin(state.clock * 3 + item.x) * 3;
+    ctx.fillStyle = '#9bdfcb'; ctx.shadowColor = '#79e0c1'; ctx.shadowBlur = 12;
+    ctx.fillRect(item.x - 3, y - 8, 6, 16); ctx.fillRect(item.x - 8, y - 3, 16, 6); ctx.shadowBlur = 0;
+  }
+  for (const effect of effects) {
+    ctx.globalAlpha = clamp(effect.life / effect.maxLife, 0, 1);
+    if (effect.text) {
+      ctx.textAlign = 'center'; ctx.font = effect.large ? 'bold 18px monospace' : 'bold 13px monospace';
+      ctx.fillStyle = effect.color; ctx.fillText(effect.text, effect.x, effect.y);
+    } else {
+      ctx.strokeStyle = effect.color; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(effect.x, effect.y);
+      ctx.lineTo(effect.x - effect.vx * .028, effect.y - effect.vy * .028); ctx.stroke();
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+function combatEvents(events) {
+  for (const event of events) {
+    if (event.type === 'hit' || event.type === 'hurt') {
+      const y = WORLD.ground - event.y;
+      const color = event.type === 'hurt' ? '#f598a4' : event.finisher ? '#ffd291' : '#b2f5f7';
+      effects.push({ x: event.x, y: y - 35, vx: 0, vy: -35, life: .75, maxLife: .75, text: String(event.damage), color, large: event.finisher });
+      for (let i = 0; i < 10; i++) {
+        const angle = Math.random() * Math.PI * 2, speed = 60 + Math.random() * 120;
+        effects.push({ x: event.x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, life: .25, maxLife: .25, color });
+      }
+      state.hitstop = event.finisher ? .075 : .045; state.shake = event.type === 'hurt' ? .2 : .12;
+      if (!state.muted) audio?.effect(event.type === 'hurt' ? 'hurt' : 'hit');
+    }
+    if (event.type === 'swing' && !state.muted) audio?.effect('swing');
+    if (event.type === 'kill') {
+      if (event.drop) pickups.push({ x: event.x });
+      if (event.boss && !state.won) {
+        player.health = Math.max(1, player.health);
+        state.won = true; state.mode = 'victory'; releaseControls();
+        $('victory-stats').textContent = `${player.kills} enemies defeated · ${player.bestCombo} hit best combo · ${player.score} points`;
+        $('victory-dialog').showModal(); audio?.suspend();
+      }
+    }
+    if (event.type === 'death' && state.mode !== 'victory') {
+      state.mode = 'dead'; releaseControls();
+      $('death-copy').textContent = `Return to ${DISTRICTS[state.checkpointIndex].name} with full vitality. Defeated enemies and your score are kept.`;
+      $('death-dialog').showModal(); audio?.suspend();
+    }
+  }
+}
 function drawTrain() {
   const crop = art.trainCrop;
   const width = 950;
@@ -211,7 +366,8 @@ function drawDistricts() {
   for (let index = 0; index < art.backgrounds.length; index++) {
     const x = index * BLOCK_WIDTH;
     if (x + BLOCK_WIDTH < state.camera || x > state.camera + view.worldWidth) continue;
-    ctx.drawImage(art.backgrounds[index], x, 0, BLOCK_WIDTH, WORLD.height);
+    if (art.backgrounds[index]) ctx.drawImage(art.backgrounds[index], x, 0, BLOCK_WIDTH, WORLD.height);
+    else { ctx.fillStyle = '#0b1826'; ctx.fillRect(x, 0, BLOCK_WIDTH, WORLD.height); loadDistrict(index).catch(() => {}); }
   }
   // Building-edge shadows make the joins read as passages between city blocks.
   for (let index = 1; index < DISTRICTS.length; index++) {
@@ -248,13 +404,15 @@ function render() {
   if (!state.loaded) return;
   ctx.setTransform(view.dpr * view.scale, 0, 0, view.dpr * view.scale, 0, 0);
   ctx.imageSmoothingEnabled = false;
-  ctx.save(); ctx.translate(-state.camera, -view.cameraY);
+  const shake = reducedMotion ? 0 : state.shake;
+  const shakeX = Math.sin(state.clock * 133) * shake * 25, shakeY = Math.cos(state.clock * 113) * shake * 13;
+  ctx.save(); ctx.translate(-state.camera + shakeX, -view.cameraY + shakeY);
   drawDistricts();
   drawTrain();
   drawSteam();
   ctx.restore();
   drawRain(false);
-  ctx.save(); ctx.translate(-state.camera, -view.cameraY);
+  ctx.save(); ctx.translate(-state.camera + shakeX, -view.cameraY + shakeY);
   const crowd = [...pedestrians].sort((a, b) => a.ground - b.ground);
   for (const person of crowd) {
     if (person.x < state.camera - 160 || person.x > state.camera + view.worldWidth + 160) continue;
@@ -268,10 +426,9 @@ function render() {
     ctx.fillStyle = visits.has(stop.id) ? '#aecdc6' : '#f4d193';
     ctx.beginPath(); ctx.arc(stop.x, WORLD.ground - 160, 3.5, 0, Math.PI * 2); ctx.fill();
   }
-  shadow(player.x, WORLD.ground, 34, .25);
-  const hero = player.moving ? art.hero : art.idle;
-  footShadows(hero, player.phase, player.x, WORLD.ground, hero.height, player.direction);
-  drawSprite(hero, player.phase, player.x, WORLD.ground, hero.height, player.direction);
+  for (const foe of enemies) if (foe.x >= state.camera - 230 && foe.x <= state.camera + view.worldWidth + 230) drawEnemy(foe);
+  drawHero();
+  drawCombatEffects();
   ctx.restore();
   drawRain(true);
 }
@@ -279,6 +436,9 @@ function render() {
 function update(dt) {
   if (!state.loaded || !['welcome', 'playing'].includes(state.mode)) return;
   state.clock += dt;
+  state.shake = Math.max(0, state.shake - dt);
+  for (const effect of effects) { effect.x += effect.vx * dt; effect.y += effect.vy * dt; effect.life -= dt; }
+  effects = effects.filter(effect => effect.life > 0);
   for (const person of pedestrians) {
     const moved = person.speed * dt;
     person.x = wrapPedestrian(person.x + person.direction * moved, WORLD.width);
@@ -287,13 +447,20 @@ function update(dt) {
   if (state.mode === 'playing') {
     state.elapsed += dt;
     const axis = movementAxis(keys.has('KeyA') || keys.has('ArrowLeft') || touch.left, keys.has('KeyD') || keys.has('ArrowRight') || touch.right);
-    const before = player.x;
-    player.x = movePlayer(player.x, axis, dt, keys.has('ShiftLeft') || keys.has('ShiftRight'), WORLD.width);
-    const moved = player.x - before;
-    player.moving = Math.abs(moved) > .001;
-    if (axis) player.direction = axis;
-    if (player.moving) player.phase = advanceWalk(player.phase, moved, art.hero.worldCycle, art.hero.frames.length);
-    state.nearest = closestStop(player.x, stops);
+    const simulationDelta = state.hitstop > 0 ? 0 : dt;
+    state.hitstop = Math.max(0, state.hitstop - dt);
+    combatEvents(stepCombat(player, enemies, simulationDelta, { axis, fast: keys.has('ShiftLeft') || keys.has('ShiftRight'), walkCycle: art.hero.worldCycle }, WORLD.width));
+    for (const item of [...pickups]) if (state.mode === 'playing' && Math.abs(item.x - player.x) < 48 && player.y < 60) {
+      player.health = Math.min(player.maxHealth, player.health + 18);
+      pickups = pickups.filter(pickup => pickup !== item);
+      effects.push({ x: player.x, y: WORLD.ground - 240, vx: 0, vy: -25, life: 1, maxLife: 1, text: '+18 VITALITY', color: '#9bdfcb' });
+    }
+    const district = districtIndex(player.x, BLOCK_WIDTH, DISTRICTS.length);
+    if (district !== state.district) {
+      state.district = district; prefetchDistricts(district);
+      activateCheckpoint(district);
+    }
+    state.nearest = nearbyThreat(220) ? null : closestStop(player.x, stops);
   } else player.moving = false;
   const target = cameraTarget(player.x, view.worldWidth, WORLD.width);
   state.camera += (target - state.camera) * (1 - Math.exp(-dt * 5));
@@ -316,26 +483,64 @@ function updateHud() {
   canvas.dataset.visited = String(visits.size);
   const district = districtIndex(player.x, BLOCK_WIDTH, DISTRICTS.length);
   canvas.dataset.district = DISTRICTS[district].id;
-  canvas.dataset.npcTypes = String(pedestrians.length);
-  canvas.dataset.npcIds = pedestrians.map(person => person.id).join(',');
+  canvas.dataset.npcTypes = String(new Set(pedestrians.map(person => person.id)).size);
+  canvas.dataset.npcCount = String(pedestrians.length);
+  canvas.dataset.npcIds = [...new Set(pedestrians.map(person => person.id))].join(',');
   canvas.dataset.maxNpcSpeed = String(Math.max(0, ...pedestrians.map(person => person.speed)));
   canvas.dataset.npcGroundGap = String(Math.min(...pedestrians.map(person => WORLD.ground - person.ground)));
   canvas.dataset.heroWalkFrames = String(art.hero?.frames.length ?? 0);
   canvas.dataset.heroCycleDistance = art.hero?.worldCycle.toFixed(1) ?? '0';
+  canvas.dataset.health = String(player.health);
+  canvas.dataset.heroY = player.y.toFixed(1);
+  canvas.dataset.attack = player.attack ? String(player.attack.stage + 1) : '0';
+  canvas.dataset.hitCombo = String(player.hitChain);
+  canvas.dataset.bestCombo = String(player.bestCombo);
+  canvas.dataset.kills = String(player.kills);
+  canvas.dataset.enemyCount = String(enemies.length);
+  canvas.dataset.sectionCount = String(DISTRICTS.length);
+  canvas.dataset.checkpoint = String(state.checkpointIndex + 1);
+  canvas.dataset.nearestEnemyHealth = String(enemies.filter(foe => foe.health > 0).sort((a, b) => Math.abs(a.x - player.x) - Math.abs(b.x - player.x))[0]?.health ?? 0);
   $('district-name').textContent = `${String(district + 1).padStart(2, '0')} / ${DISTRICTS[district].name.toUpperCase()}`;
   $('journey-position').style.left = `${player.x / WORLD.width * 100}%`;
   $('journey-route').setAttribute('aria-label', `District ${district + 1} of ${DISTRICTS.length}: ${DISTRICTS[district].name}`);
   $('stop-count').textContent = `${visits.size} / ${stops.length}`;
+  $('health').value = player.health; $('health-value').textContent = `${player.health} / ${player.maxHealth}`;
+  $('stamina').value = player.stamina;
+  $('kill-count').textContent = `${player.kills} DEFEATED`; $('score').textContent = String(player.score).padStart(6, '0');
+  $('combo').hidden = player.hitChain < 2 && !player.attack;
+  $('combo-count').textContent = player.hitChain >= 2 ? `${player.hitChain} HITS` : '';
+  $('combo-name').textContent = player.attack ? `${player.attack.stage + 1} / 3 · ${COMBOS[player.attack.stage].name}` : 'KEEP THE RHYTHM';
+  if (state.won) { $('objective').firstChild.textContent = 'DAWN GATE CLEARED'; $('objective').querySelector('span').textContent = 'Keep exploring the city.'; }
   const available = state.mode === 'playing' && state.nearest;
   $('interact').hidden = !available;
   if (available) $('interact-name').textContent = `${state.nearest.name}${visits.has(state.nearest.id) ? ' · revisit' : ''}`;
   $('touch-explore').disabled = !available;
+  $('touch-explore').hidden = !available;
+}
+function nearbyThreat(radius = 380) { return enemies.some(foe => foe.health > 0 && Math.abs(foe.x - player.x) < radius); }
+function swingKatana() {
+  if (state.mode !== 'playing') return;
+  const axis = movementAxis(keys.has('KeyA') || keys.has('ArrowLeft') || touch.left, keys.has('KeyD') || keys.has('ArrowRight') || touch.right);
+  if (!player.attack && !axis) {
+    const closest = enemies.filter(foe => foe.health > 0 && Math.abs(foe.x - player.x) < 220).sort((a, b) => Math.abs(a.x - player.x) - Math.abs(b.x - player.x))[0];
+    if (closest) player.direction = closest.x >= player.x ? 1 : -1;
+  }
+  requestAttack(player);
+}
+function activateCheckpoint(index) {
+  if (player.health <= 0) return;
+  state.checkpoint = BLOCK_WIDTH * index + 165; state.checkpointIndex = index;
+  if (!checkpoints.has(index)) {
+    checkpoints.add(index); player.health = player.maxHealth;
+    showToast(`${DISTRICTS[index].name} · Checkpoint reached. Vitality restored.`);
+  }
 }
 function releaseControls() { keys.clear(); touch.left = false; touch.right = false; player.moving = false; }
 function startWalk() {
   if (!state.loaded || state.mode !== 'welcome') return;
   state.mode = 'playing';
   $('welcome').hidden = true; $('hud').hidden = false; $('walk-hud').hidden = false; $('touch-controls').hidden = false;
+  $('combat-hud').hidden = false; $('objective').hidden = false;
   canvas.focus(); updateHud();
 }
 function pauseWalk() {
@@ -350,8 +555,15 @@ function resumeWalk() {
   canvas.focus(); updateHud();
 }
 function restartWalk() {
-  visits.clear(); saveVisits(); player.x = START_X; player.direction = 1; player.phase = 0;
-  state.elapsed = 0; state.camera = cameraTarget(player.x, view.worldWidth, WORLD.width);
+  visits.clear(); saveVisits(); Object.assign(player, createHero(START_X));
+  enemies = ENEMY_SPAWNS.map(spec => {
+    const foe = createEnemy(spec.id, spec.x, spec.type, spec.boss), sprite = art.enemies[spec.type];
+    foe.cycleDistance = sprite.cycleDistance * sprite.height / sprite.sourceHeight; return foe;
+  });
+  effects = []; pickups = []; checkpoints.clear(); checkpoints.add(0); restedStops.clear();
+  state.elapsed = 0; state.district = 0; state.checkpoint = START_X; state.checkpointIndex = 0; state.won = false; state.hitstop = 0;
+  $('objective').firstChild.textContent = 'REACH DAWN GATE'; $('objective').querySelector('span').textContent = 'Defeat the gate commander.';
+  prefetchDistricts(0); state.camera = cameraTarget(player.x, view.worldWidth, WORLD.width);
   resumeWalk(); showToast('A fresh night. The city is yours to explore.');
 }
 function saveVisits() {
@@ -360,6 +572,7 @@ function saveVisits() {
 function explore() {
   if (state.mode !== 'playing' || !state.nearest) return;
   const stop = state.nearest;
+  if (!restedStops.has(stop.id)) { restedStops.add(stop.id); player.health = Math.min(player.maxHealth, player.health + 25); }
   state.mode = 'stop'; releaseControls();
   $('stop-title').textContent = stop.name; $('stop-label').textContent = stop.label;
   $('stop-copy').textContent = stop.copy; $('stop-detail').textContent = stop.detail;
@@ -376,6 +589,52 @@ function showToast(message) {
   clearTimeout(toastTimeout); $('toast').textContent = message; $('toast').hidden = false;
   toastTimeout = setTimeout(() => { $('toast').hidden = true; }, 6500);
 }
+function openMap() {
+  if (state.mode !== 'playing') return;
+  const blocked = nearbyThreat();
+  state.mode = 'map'; releaseControls(); audio?.suspend();
+  $('map-status').textContent = blocked ? 'Enemies are close. Clear the street before traveling.' : 'Travel to any of the 18 districts. New streets unlock recovery checkpoints.';
+  $('map-grid').replaceChildren(...DISTRICTS.map((district, index) => {
+    const button = document.createElement('button'); button.type = 'button'; button.className = `map-card${index === state.district ? ' current' : ''}`;
+    const small = document.createElement('small'); small.textContent = `${String(index + 1).padStart(2, '0')} / ${checkpoints.has(index) ? 'CHECKPOINT' : index === 17 ? 'FINAL ENCOUNTER' : 'CITY SECTION'}`;
+    button.append(small, document.createTextNode(district.name)); button.disabled = blocked;
+    button.addEventListener('click', () => travelTo(index)); return button;
+  }));
+  $('map-dialog').showModal(); updateHud();
+}
+function closeMap() {
+  if (state.traveling) return;
+  $('map-dialog').close(); state.mode = 'playing'; lastFrame = performance.now();
+  if (!state.muted) audio?.resume(); canvas.focus(); updateHud();
+}
+async function travelTo(index) {
+  if (state.traveling || state.mode !== 'map') return;
+  state.traveling = true; $('map-status').textContent = `Traveling to ${DISTRICTS[index].name}…`;
+  for (const button of $('map-grid').querySelectorAll('button')) button.disabled = true;
+  try {
+    await Promise.all([loadDistrict(index - 1), loadDistrict(index), loadDistrict(index + 1)]);
+    player.x = index === 0 ? START_X : BLOCK_WIDTH * index + 165;
+    player.y = 0; player.vy = 0; player.attack = null; player.hurt = 0; player.blink = 0; player.dodge = 0; player.invulnerable = 1;
+    state.district = index; activateCheckpoint(index); prefetchDistricts(index);
+    state.camera = cameraTarget(player.x, view.worldWidth, WORLD.width);
+    state.traveling = false; closeMap();
+  } catch { state.traveling = false; $('map-status').textContent = 'This street could not load. Close the map and try again.'; }
+}
+function retryCheckpoint() {
+  $('death-dialog').close();
+  player.x = state.checkpoint; player.health = player.maxHealth; player.stamina = 100;
+  player.y = 0; player.vy = 0; player.hurt = 0; player.blink = 0; player.attack = null; player.dodge = 0; player.invulnerable = 2;
+  player.pendingEvents = []; player.hitChain = 0; player.comboGrace = 0;
+  for (const foe of enemies) if (foe.health > 0 && Math.abs(foe.home - state.checkpoint) < BLOCK_WIDTH) {
+    foe.x = foe.home; foe.health = foe.maxHealth; foe.stun = 0; foe.mode = 'idle'; foe.cooldown = 1;
+  }
+  state.hitstop = 0; state.mode = 'playing'; state.camera = cameraTarget(player.x, view.worldWidth, WORLD.width); lastFrame = performance.now();
+  if (!state.muted) audio?.resume(); canvas.focus(); updateHud();
+}
+function continueCity() {
+  $('victory-dialog').close(); state.mode = 'playing'; lastFrame = performance.now();
+  if (!state.muted) audio?.resume(); canvas.focus(); updateHud();
+}
 
 class CityAudio {
   constructor() {
@@ -383,6 +642,7 @@ class CityAudio {
     if (!AudioContext) throw new Error('Audio is not supported in this browser.');
     this.context = new AudioContext();
     const master = this.context.createGain(); master.gain.value = .21; master.connect(this.context.destination);
+    this.master = master;
     const buffer = this.context.createBuffer(1, this.context.sampleRate * 3, this.context.sampleRate);
     const data = buffer.getChannelData(0);
     for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * .6;
@@ -402,17 +662,36 @@ class CityAudio {
     const presence = Math.max(0, 1 - Math.abs(cycle - 2100) / 900);
     this.trainGain.gain.setTargetAtTime(presence * .09, this.context.currentTime, .2);
   }
+  effect(kind) {
+    const now = this.context.currentTime, tone = this.context.createOscillator(), gain = this.context.createGain();
+    tone.type = kind === 'swing' ? 'triangle' : 'square';
+    tone.frequency.setValueAtTime(kind === 'swing' ? 650 : kind === 'hurt' ? 110 : 190, now);
+    tone.frequency.exponentialRampToValueAtTime(kind === 'swing' ? 130 : 45, now + .12);
+    gain.gain.setValueAtTime(kind === 'swing' ? .13 : .22, now); gain.gain.exponentialRampToValueAtTime(.001, now + .15);
+    tone.connect(gain); gain.connect(this.master); tone.start(now); tone.stop(now + .16);
+  }
 }
 
 $('start').addEventListener('click', startWalk);
 $('pause').addEventListener('click', pauseWalk);
 $('resume').addEventListener('click', resumeWalk);
 $('restart').addEventListener('click', restartWalk);
+$('map').addEventListener('click', openMap);
+$('close-map').addEventListener('click', closeMap);
+$('retry').addEventListener('click', retryCheckpoint);
+$('continue-city').addEventListener('click', continueCity);
+$('touch-jump').addEventListener('pointerdown', event => { event.preventDefault(); if (state.mode === 'playing') requestJump(player); });
+$('touch-attack').addEventListener('pointerdown', event => { event.preventDefault(); swingKatana(); });
+$('touch-dodge').addEventListener('pointerdown', event => { event.preventDefault(); if (state.mode === 'playing') requestDodge(player, movementAxis(touch.left, touch.right)); });
+canvas.addEventListener('pointerdown', event => { if (event.pointerType === 'mouse' && event.button === 0 && state.mode === 'playing') { canvas.focus(); swingKatana(); } });
 $('interact').addEventListener('click', explore);
 $('touch-explore').addEventListener('click', explore);
 $('leave-stop').addEventListener('click', leaveStop);
 $('pause-dialog').addEventListener('cancel', event => { event.preventDefault(); resumeWalk(); });
 $('stop-dialog').addEventListener('cancel', event => { event.preventDefault(); leaveStop(); });
+$('map-dialog').addEventListener('cancel', event => { event.preventDefault(); closeMap(); });
+$('death-dialog').addEventListener('cancel', event => event.preventDefault());
+$('victory-dialog').addEventListener('cancel', event => { event.preventDefault(); continueCity(); });
 $('sound').addEventListener('click', async () => {
   try {
     if (!audio) audio = new CityAudio();
@@ -435,8 +714,14 @@ document.addEventListener('keydown', event => {
   if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Space'].includes(event.code)) event.preventDefault();
   if (event.code === 'Enter' && state.mode === 'welcome') { startWalk(); return; }
   if (event.code === 'Escape' && state.mode === 'playing') { event.preventDefault(); pauseWalk(); return; }
+  if (event.code === 'KeyM' && !event.repeat) { if (state.mode === 'map') closeMap(); else openMap(); return; }
   if (event.code === 'KeyE' && !event.repeat) { explore(); return; }
-  if (state.mode === 'playing') keys.add(event.code);
+  if (state.mode === 'playing') {
+    if (!event.repeat && ['Space', 'KeyW', 'ArrowUp'].includes(event.code)) { requestJump(player); return; }
+    if (!event.repeat && ['KeyJ', 'KeyX'].includes(event.code)) { swingKatana(); return; }
+    if (!event.repeat && event.code === 'KeyK') { requestDodge(player, movementAxis(keys.has('KeyA') || touch.left, keys.has('KeyD') || touch.right)); return; }
+    keys.add(event.code);
+  }
 });
 document.addEventListener('keyup', event => keys.delete(event.code));
 window.addEventListener('blur', () => { releaseControls(); if (state.mode === 'playing') pauseWalk(); });

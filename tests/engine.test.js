@@ -54,9 +54,14 @@ test('district transitions and camera continue beyond the original block', () =>
   assert.equal(districtIndex(BLOCK_WIDTH, BLOCK_WIDTH, DISTRICTS.length), 1);
   assert.equal(districtIndex(BLOCK_WIDTH * 2 + 1, BLOCK_WIDTH, DISTRICTS.length), 2);
   assert.equal(districtIndex(-1, BLOCK_WIDTH, DISTRICTS.length), 0);
-  assert.equal(districtIndex(WORLD.width + 1, BLOCK_WIDTH, DISTRICTS.length), 2);
+  assert.equal(districtIndex(WORLD.width + 1, BLOCK_WIDTH, DISTRICTS.length), DISTRICTS.length - 1);
   assert.ok(cameraTarget(BLOCK_WIDTH * 2.5, 500, WORLD.width) > BLOCK_WIDTH * 2);
   assert.ok(movePlayer(BLOCK_WIDTH - 1, 1, .05, false, WORLD.width) > BLOCK_WIDTH);
+});
+test('the expanded city contains fifteen new, distinct backgrounds', () => {
+  assert.ok(DISTRICTS.length >= 18);
+  assert.equal(new Set(DISTRICTS.map(district => district.image)).size, DISTRICTS.length);
+  assert.equal(WORLD.width, BLOCK_WIDTH * DISTRICTS.length);
 });
 test('new storefronts are reachable and existing discoveries survive the expansion', () => {
   for (const stop of STOPS) {

@@ -1,16 +1,19 @@
 import { copyFile, mkdir } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { NPC_ATLASES, HERO_WALK } from '../world.js';
+import { DISTRICTS, NPC_ATLASES, HERO_WALK, HERO_ACTIONS, ENEMY_ATLAS } from '../world.js';
 
 const project = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const files = [
-  'environments/cyberpunk-street-v1.png',
-  'environments/cyberpunk-market-street-v1.png',
-  'environments/cyberpunk-canal-street-v1.png',
+  ...DISTRICTS.flatMap(district => [`environments/${district.image}`, `environments/${district.image.replace('.png', '.prompt.txt')}`]),
+  'environments/cyberpunk-rooftop-v1.initial.prompt.txt', 'environments/cyberpunk-dawn-gate-v1.initial.prompt.txt',
   'characters/samurai/samurai-idle-v2-ivory.png',
   `characters/samurai/${HERO_WALK}.png`,
   `characters/samurai/${HERO_WALK}.json`,
+  `characters/samurai/${HERO_ACTIONS}.png`, `characters/samurai/${HERO_ACTIONS}.json`,
+  `characters/samurai/${HERO_ACTIONS}.prompt.txt`,
+  `characters/enemies/${ENEMY_ATLAS}.png`, `characters/enemies/${ENEMY_ATLAS}.json`,
+  `characters/enemies/${ENEMY_ATLAS}.prompt.txt`,
   ...NPC_ATLASES.flatMap(name => [
     `characters/pedestrians/${name}.png`, `characters/pedestrians/${name}.json`
   ]),

@@ -1,0 +1,7 @@
+Use case: precise-object-edit
+Asset type: Empty final-city-gate background for a 2D cyberpunk walking game.
+Input images: Image 1 is the edit target.
+Primary request: Remove every small person and dark human silhouette from every amber window, balcony and interior. Specifically empty the two upper gate-tower windows and the windows at the far left and far right image edges. Replace each tiny figure with nonfigurative empty-room lighting or a small plant. No head-and-shoulder shapes remain.
+Invariants: Keep the gate towers, Japanese tiled eaves, statues, pipes, banners, cyan emblem, architecture, lavender predawn skyline, neon colors, detailed pixel illustration, camera, framing, image size, sidewalk height, curb, wet pavement and reflections exactly the same. Only edit the tiny window figures. Keep the lion statues; they are architecture.
+Constraints: No people, human silhouettes, samurai, foreground characters, text, UI, panels, borders or labels. Completely unoccupied windows and balconies. Opaque 16:9 full background.
+

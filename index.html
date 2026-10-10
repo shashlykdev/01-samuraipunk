@@ -4,48 +4,74 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#080b12">
-  <meta name="description" content="Walk a rain-soaked cyberpunk city as an ivory-armored samurai. An atmospheric pixel-art game with passing commuters and late-night storefronts.">
-  <title>Neon Ronin — A midnight city walk</title>
+  <meta name="description" content="Fight through eighteen neon city districts as an ivory-armored samurai. Jump, dodge, chain katana combos, and reach Dawn Gate.">
+  <title>Neon Ronin — Road to Dawn</title>
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-<main id="game" aria-label="Neon Ronin city walking game">
-  <canvas id="scene" tabindex="0" aria-label="City scene. Walk with A and D or the left and right arrows. Hold Shift to walk faster. Press E near a storefront to explore. Press Escape to pause."></canvas>
+<main id="game" aria-label="Neon Ronin samurai action game">
+  <canvas id="scene" tabindex="0" aria-label="City scene. Move with A and D or arrows. Space jumps. J swings the katana; press again to chain three attacks. K dodges. Shift walks faster. E explores. M opens the city map. Escape pauses."></canvas>
   <div class="scene-shade" aria-hidden="true"></div>
   <header class="hud" id="hud" hidden>
     <div class="wordmark">NEON RONIN<span id="district-name">01 / THE LANTERN DISTRICT</span></div>
     <div class="hud-actions">
       <button id="sound" type="button" aria-pressed="false">Sound off</button>
+      <button id="map" type="button">City map <kbd>M</kbd></button>
       <button id="fullscreen" type="button">Fullscreen</button>
       <button id="pause" type="button" aria-label="Pause game">Pause <kbd>Esc</kbd></button>
     </div>
   </header>
+  <section class="combat-hud" id="combat-hud" aria-label="Samurai status" hidden>
+    <div class="health-label"><span>VITALITY</span><strong id="health-value">100 / 100</strong></div>
+    <progress id="health" max="100" value="100" aria-label="Health"></progress>
+    <div class="stamina-row"><span>DODGE</span><progress id="stamina" max="100" value="100" aria-label="Dodge stamina"></progress></div>
+    <div class="combat-totals"><span id="kill-count">0 DEFEATED</span><span id="score">000000</span></div>
+  </section>
+  <div class="objective" id="objective" hidden>REACH DAWN GATE<span>Defeat the gate commander.</span></div>
+  <div class="combo" id="combo" hidden><strong id="combo-count"></strong><span id="combo-name"></span></div>
   <section class="welcome" id="welcome" aria-labelledby="title">
     <div class="welcome-inner">
-      <p class="kicker"><span></span> A MIDNIGHT CITY WALK</p>
+      <p class="kicker"><span></span> ROAD TO DAWN</p>
       <h1 id="title">NEON<br><em>RONIN</em><span class="kanji" aria-hidden="true">浪人</span></h1>
-      <p class="welcome-copy">Lantern alleys. Night markets. A neon canal.<br>Take the long way through a city that never sleeps.</p>
+      <p class="welcome-copy">Eighteen districts. One road to the city gate.<br>Draw your katana. Find your rhythm. Survive until dawn.</p>
       <button class="primary" id="start" type="button" disabled>Loading the city…</button>
       <p class="load-status" id="load-status" role="status">Gathering the city’s lights and faces.</p>
-      <div class="welcome-controls"><span><kbd>←</kbd> <kbd>→</kbd> Walk</span><span><kbd>Shift</kbd> Quick step</span><span><kbd>E</kbd> Explore</span></div>
+      <div class="welcome-controls"><span><kbd>←</kbd> <kbd>→</kbd> Move</span><span><kbd>Space</kbd> Jump</span><span><kbd>J</kbd> Katana / combo</span><span><kbd>K</kbd> Dodge</span></div>
     </div>
-    <div class="edition">THREE CONNECTED DISTRICTS<span>PIXEL ART · NIGHT WALK</span></div>
+    <div class="edition">18 CONNECTED DISTRICTS<span>PIXEL ART · SAMURAI ACTION</span></div>
   </section>
   <footer class="walk-hud" id="walk-hud" hidden>
-    <div class="hint" id="control-hint"><kbd>A</kbd><kbd>D</kbd> walk <span>·</span> <kbd>Shift</kbd> quick step</div>
-    <div class="journey" id="journey-route" aria-label="City route"><span>LANTERNS</span><div class="journey-line"><i id="journey-position"></i></div><span>CANAL</span></div>
+    <div class="hint" id="control-hint"><kbd>A</kbd><kbd>D</kbd> move <kbd>Space</kbd> jump <kbd>J</kbd> combo <kbd>K</kbd> dodge</div>
+    <div class="journey" id="journey-route" aria-label="City route"><span>LANTERNS</span><div class="journey-line"><i id="journey-position"></i></div><span>DAWN GATE</span></div>
     <button class="interact" id="interact" type="button" hidden><kbd>E</kbd><span id="interact-name">Explore</span></button>
-    <div class="stops"><span id="stop-count">0 / 7</span> NIGHT STOPS</div>
+    <div class="stops"><span id="stop-count">0 / 13</span> NIGHT STOPS</div>
   </footer>
   <div class="touch-controls" id="touch-controls" hidden>
     <div class="touch-movement"><button type="button" id="left" aria-label="Walk left">←</button><button type="button" id="right" aria-label="Walk right">→</button></div>
+    <div class="touch-actions"><button type="button" id="touch-jump" aria-label="Jump">↑</button><button type="button" id="touch-attack" aria-label="Swing katana">斬<span>Katana</span></button><button type="button" id="touch-dodge" aria-label="Dodge">⇢</button></div>
     <button type="button" id="touch-explore">Explore</button>
   </div>
   <div class="toast" id="toast" role="status" hidden></div>
   <dialog id="pause-dialog" aria-labelledby="pause-title">
     <p class="kicker">A MOMENT BETWEEN THE LIGHTS</p><h2 id="pause-title">The city can wait.</h2>
-    <p>Walk with A / D or the arrow keys. Hold Shift for a quicker step. Explore the lit storefronts with E.</p>
+    <p>Move with A / D or arrows. Space jumps, J swings your katana, and K dodges. Tap J during a strike to chain a three-hit combo. Jump + J attacks in the air. Shift moves faster.</p>
+    <p>M opens the city map. E explores storefronts. New districts unlock recovery checkpoints; your first rest at a stop restores 25 health.</p>
     <div class="dialog-actions"><button class="primary" id="resume" type="button">Continue walking</button><button class="secondary" id="restart" type="button">Start a new night</button></div>
+  </dialog>
+  <dialog id="map-dialog" class="city-map" aria-labelledby="map-title">
+    <p class="kicker">18 SECTIONS / A CITY UNTIL DAWN</p><h2 id="map-title">Choose your next street.</h2>
+    <p id="map-status">Travel to any district. Clear nearby enemies before traveling.</p>
+    <div class="map-grid" id="map-grid"></div>
+    <button class="secondary" id="close-map" type="button">Back to the street</button>
+  </dialog>
+  <dialog id="death-dialog" aria-labelledby="death-title">
+    <p class="kicker">FALL. BREATHE. RISE AGAIN.</p><h2 id="death-title">The night isn’t over.</h2>
+    <p id="death-copy"></p><button class="primary" id="retry" type="button">Return to checkpoint</button>
+  </dialog>
+  <dialog id="victory-dialog" aria-labelledby="victory-title">
+    <p class="kicker">THE GATE IS OPEN</p><h2 id="victory-title">Dawn breaks.</h2>
+    <p>You defeated the gate commander. The city is yours to explore.</p><p id="victory-stats"></p>
+    <button class="primary" id="continue-city" type="button">Keep exploring</button>
   </dialog>
   <dialog id="stop-dialog" aria-labelledby="stop-title">
     <p class="kicker" id="stop-label">NIGHT STOP</p><h2 id="stop-title"></h2>

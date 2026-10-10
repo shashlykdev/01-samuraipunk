@@ -1,0 +1,379 @@
+{
+  "image": "cyber-raiders-v1.png",
+  "width": 1774,
+  "height": 887,
+  "layout": {
+    "rows": 4,
+    "columns": 4,
+    "column_boundaries": [
+      0,
+      464,
+      891,
+      1384,
+      1774
+    ],
+    "row_rectangles": [
+      {
+        "y": 0,
+        "height": 236
+      },
+      {
+        "y": 236,
+        "height": 218
+      },
+      {
+        "y": 454,
+        "height": 221
+      },
+      {
+        "y": 676,
+        "height": 211
+      }
+    ],
+    "uniform_grid": false,
+    "excluded_scanlines": [
+      675
+    ]
+  },
+  "characters": [
+    {
+      "id": "raider",
+      "name": "Violet baton raider",
+      "default_direction": 1,
+      "body_height": 222,
+      "cycle_distance": 188,
+      "cycle_distance_basis": "Approximate source pixels, twice contact-pose ankle-center gap; excludes boot toe length. Raider gap~94px, enforcer~95px.",
+      "frames": [
+        {
+          "index": 0,
+          "x": 0,
+          "y": 0,
+          "width": 464,
+          "height": 236,
+          "anchor": {
+            "x": 249,
+            "y": 233
+          },
+          "opaque_bounds": {
+            "x": 159,
+            "y": 11,
+            "width": 168,
+            "height": 222
+          }
+        },
+        {
+          "index": 1,
+          "x": 464,
+          "y": 0,
+          "width": 427,
+          "height": 236,
+          "anchor": {
+            "x": 228,
+            "y": 234
+          },
+          "opaque_bounds": {
+            "x": 141,
+            "y": 11,
+            "width": 161,
+            "height": 223
+          }
+        },
+        {
+          "index": 2,
+          "x": 891,
+          "y": 0,
+          "width": 493,
+          "height": 236,
+          "anchor": {
+            "x": 242,
+            "y": 233
+          },
+          "opaque_bounds": {
+            "x": 150,
+            "y": 11,
+            "width": 174,
+            "height": 222
+          }
+        },
+        {
+          "index": 3,
+          "x": 1384,
+          "y": 0,
+          "width": 390,
+          "height": 236,
+          "anchor": {
+            "x": 194,
+            "y": 233
+          },
+          "opaque_bounds": {
+            "x": 98,
+            "y": 11,
+            "width": 176,
+            "height": 222
+          }
+        },
+        {
+          "index": 4,
+          "x": 0,
+          "y": 236,
+          "width": 464,
+          "height": 218,
+          "anchor": {
+            "x": 235,
+            "y": 210
+          },
+          "opaque_bounds": {
+            "x": 147,
+            "y": 13,
+            "width": 177,
+            "height": 197
+          }
+        },
+        {
+          "index": 5,
+          "x": 464,
+          "y": 236,
+          "width": 427,
+          "height": 218,
+          "anchor": {
+            "x": 222,
+            "y": 210
+          },
+          "opaque_bounds": {
+            "x": 136,
+            "y": 3,
+            "width": 178,
+            "height": 207
+          }
+        },
+        {
+          "index": 6,
+          "x": 891,
+          "y": 236,
+          "width": 493,
+          "height": 218,
+          "anchor": {
+            "x": 219,
+            "y": 210
+          },
+          "opaque_bounds": {
+            "x": 135,
+            "y": 14,
+            "width": 256,
+            "height": 196
+          }
+        },
+        {
+          "index": 7,
+          "x": 1384,
+          "y": 236,
+          "width": 390,
+          "height": 218,
+          "anchor": {
+            "x": 201,
+            "y": 210
+          },
+          "opaque_bounds": {
+            "x": 115,
+            "y": 14,
+            "width": 161,
+            "height": 196
+          }
+        }
+      ],
+      "animations": {
+        "walk": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "guard": [
+          4
+        ],
+        "windup": [
+          5
+        ],
+        "strike": [
+          6
+        ],
+        "hurt": [
+          7
+        ]
+      }
+    },
+    {
+      "id": "enforcer",
+      "name": "Crimson blade enforcer",
+      "default_direction": 1,
+      "body_height": 212,
+      "cycle_distance": 190,
+      "cycle_distance_basis": "Approximate source pixels, twice contact-pose ankle-center gap; excludes boot toe length. Raider gap~94px, enforcer~95px.",
+      "frames": [
+        {
+          "index": 0,
+          "x": 0,
+          "y": 454,
+          "width": 464,
+          "height": 221,
+          "anchor": {
+            "x": 245,
+            "y": 221
+          },
+          "opaque_bounds": {
+            "x": 153,
+            "y": 9,
+            "width": 180,
+            "height": 212
+          }
+        },
+        {
+          "index": 1,
+          "x": 464,
+          "y": 454,
+          "width": 427,
+          "height": 221,
+          "anchor": {
+            "x": 226,
+            "y": 221
+          },
+          "opaque_bounds": {
+            "x": 140,
+            "y": 9,
+            "width": 168,
+            "height": 212
+          }
+        },
+        {
+          "index": 2,
+          "x": 891,
+          "y": 454,
+          "width": 493,
+          "height": 221,
+          "anchor": {
+            "x": 243,
+            "y": 221
+          },
+          "opaque_bounds": {
+            "x": 149,
+            "y": 9,
+            "width": 175,
+            "height": 212
+          }
+        },
+        {
+          "index": 3,
+          "x": 1384,
+          "y": 454,
+          "width": 390,
+          "height": 221,
+          "anchor": {
+            "x": 192,
+            "y": 221
+          },
+          "opaque_bounds": {
+            "x": 102,
+            "y": 9,
+            "width": 178,
+            "height": 212
+          }
+        },
+        {
+          "index": 4,
+          "x": 0,
+          "y": 676,
+          "width": 464,
+          "height": 211,
+          "anchor": {
+            "x": 233,
+            "y": 202
+          },
+          "opaque_bounds": {
+            "x": 145,
+            "y": 11,
+            "width": 189,
+            "height": 191
+          }
+        },
+        {
+          "index": 5,
+          "x": 464,
+          "y": 676,
+          "width": 427,
+          "height": 211,
+          "anchor": {
+            "x": 220,
+            "y": 202
+          },
+          "opaque_bounds": {
+            "x": 130,
+            "y": 0,
+            "width": 184,
+            "height": 202
+          }
+        },
+        {
+          "index": 6,
+          "x": 891,
+          "y": 676,
+          "width": 493,
+          "height": 211,
+          "anchor": {
+            "x": 218,
+            "y": 202
+          },
+          "opaque_bounds": {
+            "x": 113,
+            "y": 11,
+            "width": 283,
+            "height": 191
+          }
+        },
+        {
+          "index": 7,
+          "x": 1384,
+          "y": 676,
+          "width": 390,
+          "height": 211,
+          "anchor": {
+            "x": 196,
+            "y": 203
+          },
+          "opaque_bounds": {
+            "x": 118,
+            "y": 14,
+            "width": 165,
+            "height": 189
+          }
+        }
+      ],
+      "animations": {
+        "walk": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "guard": [
+          4
+        ],
+        "windup": [
+          5
+        ],
+        "strike": [
+          6
+        ],
+        "hurt": [
+          7
+        ]
+      }
+    }
+  ],
+  "calibration": {
+    "scale": "Use one fixed desired physical height / character.body_height scale across that enemy walk and combat poses. Do not scale each weapon-inclusive frame height.",
+    "body_height_basis": "Walk frame0 hood/helmet-to-boot-bottom meaningful alpha source height.",
+    "anchor": "Each frame anchor is relative to its source rectangle. X is estimated pelvis/body center, independent of weapon extent. Y is actual boot-bottom baseline.",
+    "alpha_threshold": 20,
+    "fringe_note": "Enforcer walk row and overhead-windup sword meet through alpha<=128 antialias fringe on scanline675. Excluding that single line from both rectangles preserves all opaque cores and prevents neighboring-sprite fringe leakage; sword core begins676. All other meaningful-alpha rows and columns have clear gaps."
+  }
+}
