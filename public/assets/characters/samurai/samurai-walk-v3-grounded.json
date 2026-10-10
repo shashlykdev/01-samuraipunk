@@ -1,0 +1,204 @@
+{
+  "image": "samurai-walk-v3-grounded.png",
+  "status": "generated under user authorization; no approval pause required",
+  "palette_status": "preserves approved ivory coat, silver armor, red cloth and cyan accents",
+  "reference": "samurai-idle-v2-ivory.png",
+  "source_sheet": "samurai-walk-v2-ivory.png",
+  "direction": "right",
+  "image_size": {
+    "width": 1254,
+    "height": 1254
+  },
+  "layout": {
+    "columns": 4,
+    "rows": 2,
+    "use_explicit_frame_rectangles": true,
+    "sequence": "row-major"
+  },
+  "cycle_distance": 240,
+  "cycle_calibration": {
+    "units": "source pixels",
+    "approximate": true,
+    "max_contact_ankle_center_spread": 120,
+    "approximate_character_height": 550,
+    "contact_spread_fraction": 0.218,
+    "description": "cycle_distance is twice the approximate maximum horizontal ankle-center separation, not the full silhouette or boot-end width.",
+    "expected_world_cycle_distance_at_224px_body_height": 97.7
+  },
+  "frames": [
+    {
+      "index": 0,
+      "row": 0,
+      "column": 0,
+      "x": 0,
+      "y": 0,
+      "width": 314,
+      "height": 627,
+      "pose": "left contact",
+      "anchor": {
+        "x": 156,
+        "y": 595
+      },
+      "content_bounds": {
+        "x": 27,
+        "y": 44,
+        "width": 272,
+        "height": 551
+      }
+    },
+    {
+      "index": 1,
+      "row": 0,
+      "column": 1,
+      "x": 314,
+      "y": 0,
+      "width": 313,
+      "height": 627,
+      "pose": "settle left planted",
+      "anchor": {
+        "x": 154,
+        "y": 594
+      },
+      "content_bounds": {
+        "x": 19,
+        "y": 44,
+        "width": 269,
+        "height": 550
+      }
+    },
+    {
+      "index": 2,
+      "row": 0,
+      "column": 2,
+      "x": 627,
+      "y": 0,
+      "width": 313,
+      "height": 627,
+      "pose": "right passes low",
+      "anchor": {
+        "x": 154,
+        "y": 595
+      },
+      "content_bounds": {
+        "x": 26,
+        "y": 44,
+        "width": 241,
+        "height": 551
+      }
+    },
+    {
+      "index": 3,
+      "row": 0,
+      "column": 3,
+      "x": 940,
+      "y": 0,
+      "width": 314,
+      "height": 627,
+      "pose": "right reaches forward",
+      "anchor": {
+        "x": 154,
+        "y": 595
+      },
+      "content_bounds": {
+        "x": 15,
+        "y": 44,
+        "width": 280,
+        "height": 551
+      }
+    },
+    {
+      "index": 4,
+      "row": 1,
+      "column": 0,
+      "x": 0,
+      "y": 627,
+      "width": 314,
+      "height": 627,
+      "pose": "right contact",
+      "anchor": {
+        "x": 155,
+        "y": 586
+      },
+      "content_bounds": {
+        "x": 25,
+        "y": 44,
+        "width": 280,
+        "height": 542
+      }
+    },
+    {
+      "index": 5,
+      "row": 1,
+      "column": 1,
+      "x": 314,
+      "y": 627,
+      "width": 313,
+      "height": 627,
+      "pose": "settle right planted",
+      "anchor": {
+        "x": 156,
+        "y": 585
+      },
+      "content_bounds": {
+        "x": 17,
+        "y": 42,
+        "width": 286,
+        "height": 543
+      }
+    },
+    {
+      "index": 6,
+      "row": 1,
+      "column": 2,
+      "x": 627,
+      "y": 627,
+      "width": 313,
+      "height": 627,
+      "pose": "left passes low",
+      "anchor": {
+        "x": 156,
+        "y": 588
+      },
+      "content_bounds": {
+        "x": 24,
+        "y": 42,
+        "width": 243,
+        "height": 546
+      }
+    },
+    {
+      "index": 7,
+      "row": 1,
+      "column": 3,
+      "x": 940,
+      "y": 627,
+      "width": 314,
+      "height": 627,
+      "pose": "left reaches forward",
+      "anchor": {
+        "x": 156,
+        "y": 587
+      },
+      "content_bounds": {
+        "x": 14,
+        "y": 42,
+        "width": 289,
+        "height": 545
+      }
+    }
+  ],
+  "alpha": {
+    "mode": "RGBA",
+    "minimum": 0,
+    "maximum": 255,
+    "preserved_from_generator": true
+  },
+  "notes": [
+    "Eight distinct low-step poses, with much smaller ankle travel and knee lift than the approved v2 sheet.",
+    "Cell widths alternate between 314 and 313 source pixels because the generated image width is 1254. Use explicit rectangles.",
+    "Content bounds are measured using alpha > 16 and are relative to each cell. Anchors approximate the pelvis-center ground position and use each cell's measured foot baseline.",
+    "Bottom-row bodies are around 1–2% shorter than top-row bodies; normalizing by content_bounds.height can keep the displayed body height consistent.",
+    "Approximate stride calibration should be checked against the final in-game draw scale and foot planting.",
+    "The .prompt.txt is the exact refinement prompt used for the selected image. The .initial.prompt.txt records the first generation prompt."
+  ]
+}

@@ -1,14 +1,29 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { movementAxis, movePlayer, cameraTarget, districtIndex, safeDelta, wrapPedestrian, closestStop, restoreVisits } from '../engine.js';
+import { movementAxis, movePlayer, cameraTarget, districtIndex, advanceWalk, npcLane, safeDelta, wrapPedestrian, closestStop, restoreVisits } from '../engine.js';
 import { BLOCK_WIDTH, DISTRICTS, WORLD, STOPS } from '../world.js';
 
 test('opposing controls cancel and frame stalls do not teleport the player', () => {
   assert.equal(movementAxis(true, true), 0);
   assert.equal(movePlayer(500, 0, 5, false, 2000), 500);
-  assert.equal(movePlayer(500, 1, 10, false, 2000), 505);
+  assert.equal(movePlayer(500, 1, 10, false, 2000), 504);
   assert.equal(safeDelta(-2), 0);
   assert.equal(safeDelta(NaN), 0);
+});
+test('a full stride advances one cycle at any movement speed, and stopping freezes the feet', () => {
+  assert.equal(advanceWalk(0, 72, 72, 8), 8);
+  assert.equal(advanceWalk(0, 36, 72, 8), 4);
+  assert.equal(advanceWalk(3, 0, 72, 8), 3);
+  assert.equal(advanceWalk(0, -72, 72, 8), 8);
+  let phase = 0;
+  for (let step = 0; step < 8; step++) phase = advanceWalk(phase, 9, 72, 8);
+  assert.equal(phase, 8);
+});
+test('every NPC lane keeps a clear distance behind the player on the sidewalk', () => {
+  for (let index = 0; index < 16; index++) {
+    const gap = WORLD.ground - npcLane(WORLD.ground, index);
+    assert.ok(gap >= 94 && gap <= 118);
+  }
 });
 test('both player movement directions stay inside the street', () => {
   assert.equal(movePlayer(66, -1, .05, true, 2000), 65);

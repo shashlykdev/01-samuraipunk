@@ -3,8 +3,10 @@ export const movementAxis = (left, right) => Number(Boolean(right)) - Number(Boo
 export const safeDelta = seconds => clamp(Number.isFinite(seconds) ? seconds : 0, 0, 0.05);
 export const cameraTarget = (x, viewWidth, worldWidth) => clamp(x - viewWidth / 2, 0, Math.max(0, worldWidth - viewWidth));
 export const districtIndex = (x, blockWidth, count) => clamp(Math.floor(x / blockWidth), 0, count - 1);
+export const advanceWalk = (phase, distance, cycleDistance, frames) => phase + Math.abs(distance) * frames / cycleDistance;
+export const npcLane = (ground, index) => ground - 94 - (index % 3) * 12;
 export function movePlayer(x, axis, dt, fast, worldWidth) {
-  return clamp(x + clamp(axis, -1, 1) * (fast ? 170 : 100) * safeDelta(dt), 65, worldWidth - 65);
+  return clamp(x + clamp(axis, -1, 1) * (fast ? 135 : 80) * safeDelta(dt), 65, worldWidth - 65);
 }
 export function wrapPedestrian(x, worldWidth) {
   const margin = 180;

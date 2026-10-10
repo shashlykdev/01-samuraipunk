@@ -1,0 +1,498 @@
+{
+  "width": 1774,
+  "height": 887,
+  "image": "npc-workers-walk-v2.png",
+  "layout": {
+    "rows": 4,
+    "columns": 8,
+    "uniform_grid": false,
+    "row_boundaries": [
+      0,
+      240,
+      478,
+      703,
+      887
+    ],
+    "column_boundaries": [
+      0,
+      240,
+      460,
+      682,
+      907,
+      1128,
+      1348,
+      1574,
+      1774
+    ],
+    "note": "Safe frame rectangles derived from actual transparent row/column gaps. Per-character frame heights remain constant."
+  },
+  "characters": [
+    {
+      "id": "mechanic",
+      "name": "Toolbox mechanic",
+      "row": 0,
+      "default_direction": 1,
+      "kind": "person",
+      "visual_height": 210,
+      "cycle_distance": 76,
+      "cycle_distance_basis": "Estimated source pixels: twice contact-frame ankle-centre separation, excluding boot length; tune against foot planting at runtime.",
+      "frames": [
+        {
+          "index": 0,
+          "x": 0,
+          "y": 0,
+          "width": 240,
+          "height": 240,
+          "opaque_bounds": {
+            "x": 68,
+            "y": 10,
+            "width": 123,
+            "height": 226
+          }
+        },
+        {
+          "index": 1,
+          "x": 240,
+          "y": 0,
+          "width": 220,
+          "height": 240,
+          "opaque_bounds": {
+            "x": 52,
+            "y": 10,
+            "width": 112,
+            "height": 227
+          }
+        },
+        {
+          "index": 2,
+          "x": 460,
+          "y": 0,
+          "width": 222,
+          "height": 240,
+          "opaque_bounds": {
+            "x": 54,
+            "y": 10,
+            "width": 114,
+            "height": 227
+          }
+        },
+        {
+          "index": 3,
+          "x": 682,
+          "y": 0,
+          "width": 225,
+          "height": 240,
+          "opaque_bounds": {
+            "x": 56,
+            "y": 10,
+            "width": 118,
+            "height": 226
+          }
+        },
+        {
+          "index": 4,
+          "x": 907,
+          "y": 0,
+          "width": 221,
+          "height": 240,
+          "opaque_bounds": {
+            "x": 52,
+            "y": 10,
+            "width": 121,
+            "height": 226
+          }
+        },
+        {
+          "index": 5,
+          "x": 1128,
+          "y": 0,
+          "width": 220,
+          "height": 240,
+          "opaque_bounds": {
+            "x": 48,
+            "y": 10,
+            "width": 125,
+            "height": 227
+          }
+        },
+        {
+          "index": 6,
+          "x": 1348,
+          "y": 0,
+          "width": 226,
+          "height": 240,
+          "opaque_bounds": {
+            "x": 49,
+            "y": 10,
+            "width": 129,
+            "height": 227
+          }
+        },
+        {
+          "index": 7,
+          "x": 1574,
+          "y": 0,
+          "width": 200,
+          "height": 240,
+          "opaque_bounds": {
+            "x": 50,
+            "y": 10,
+            "width": 121,
+            "height": 226
+          }
+        }
+      ]
+    },
+    {
+      "id": "noodle-cook",
+      "name": "Noodle cook",
+      "row": 1,
+      "default_direction": 1,
+      "kind": "person",
+      "visual_height": 210,
+      "cycle_distance": 70,
+      "cycle_distance_basis": "Estimated source pixels: twice contact-frame ankle-centre separation, excluding boot length; tune against foot planting at runtime.",
+      "frames": [
+        {
+          "index": 0,
+          "x": 0,
+          "y": 240,
+          "width": 240,
+          "height": 238,
+          "opaque_bounds": {
+            "x": 77,
+            "y": 4,
+            "width": 105,
+            "height": 231
+          }
+        },
+        {
+          "index": 1,
+          "x": 240,
+          "y": 240,
+          "width": 220,
+          "height": 238,
+          "opaque_bounds": {
+            "x": 51,
+            "y": 4,
+            "width": 120,
+            "height": 232
+          }
+        },
+        {
+          "index": 2,
+          "x": 460,
+          "y": 240,
+          "width": 222,
+          "height": 238,
+          "opaque_bounds": {
+            "x": 58,
+            "y": 4,
+            "width": 101,
+            "height": 231
+          }
+        },
+        {
+          "index": 3,
+          "x": 682,
+          "y": 240,
+          "width": 225,
+          "height": 238,
+          "opaque_bounds": {
+            "x": 60,
+            "y": 4,
+            "width": 105,
+            "height": 231
+          }
+        },
+        {
+          "index": 4,
+          "x": 907,
+          "y": 240,
+          "width": 221,
+          "height": 238,
+          "opaque_bounds": {
+            "x": 56,
+            "y": 4,
+            "width": 104,
+            "height": 231
+          }
+        },
+        {
+          "index": 5,
+          "x": 1128,
+          "y": 240,
+          "width": 220,
+          "height": 238,
+          "opaque_bounds": {
+            "x": 51,
+            "y": 4,
+            "width": 120,
+            "height": 232
+          }
+        },
+        {
+          "index": 6,
+          "x": 1348,
+          "y": 240,
+          "width": 226,
+          "height": 238,
+          "opaque_bounds": {
+            "x": 56,
+            "y": 4,
+            "width": 100,
+            "height": 231
+          }
+        },
+        {
+          "index": 7,
+          "x": 1574,
+          "y": 240,
+          "width": 200,
+          "height": 238,
+          "opaque_bounds": {
+            "x": 55,
+            "y": 4,
+            "width": 105,
+            "height": 231
+          }
+        }
+      ]
+    },
+    {
+      "id": "salaryman",
+      "name": "Salaryman",
+      "row": 2,
+      "default_direction": 1,
+      "kind": "person",
+      "visual_height": 210,
+      "cycle_distance": 66,
+      "cycle_distance_basis": "Estimated source pixels: twice contact-frame ankle-centre separation, excluding boot length; tune against foot planting at runtime.",
+      "frames": [
+        {
+          "index": 0,
+          "x": 0,
+          "y": 478,
+          "width": 240,
+          "height": 225,
+          "opaque_bounds": {
+            "x": 74,
+            "y": 2,
+            "width": 111,
+            "height": 220
+          }
+        },
+        {
+          "index": 1,
+          "x": 240,
+          "y": 478,
+          "width": 220,
+          "height": 225,
+          "opaque_bounds": {
+            "x": 52,
+            "y": 2,
+            "width": 115,
+            "height": 221
+          }
+        },
+        {
+          "index": 2,
+          "x": 460,
+          "y": 478,
+          "width": 222,
+          "height": 225,
+          "opaque_bounds": {
+            "x": 51,
+            "y": 3,
+            "width": 112,
+            "height": 221
+          }
+        },
+        {
+          "index": 3,
+          "x": 682,
+          "y": 478,
+          "width": 225,
+          "height": 225,
+          "opaque_bounds": {
+            "x": 56,
+            "y": 3,
+            "width": 110,
+            "height": 219
+          }
+        },
+        {
+          "index": 4,
+          "x": 907,
+          "y": 478,
+          "width": 221,
+          "height": 225,
+          "opaque_bounds": {
+            "x": 52,
+            "y": 2,
+            "width": 115,
+            "height": 220
+          }
+        },
+        {
+          "index": 5,
+          "x": 1128,
+          "y": 478,
+          "width": 220,
+          "height": 225,
+          "opaque_bounds": {
+            "x": 51,
+            "y": 3,
+            "width": 117,
+            "height": 220
+          }
+        },
+        {
+          "index": 6,
+          "x": 1348,
+          "y": 478,
+          "width": 226,
+          "height": 225,
+          "opaque_bounds": {
+            "x": 52,
+            "y": 3,
+            "width": 111,
+            "height": 222
+          }
+        },
+        {
+          "index": 7,
+          "x": 1574,
+          "y": 478,
+          "width": 200,
+          "height": 225,
+          "opaque_bounds": {
+            "x": 51,
+            "y": 3,
+            "width": 114,
+            "height": 219
+          }
+        }
+      ]
+    },
+    {
+      "id": "security-worker",
+      "name": "Security worker",
+      "row": 3,
+      "default_direction": 1,
+      "kind": "person",
+      "visual_height": 210,
+      "cycle_distance": 62,
+      "cycle_distance_basis": "Estimated source pixels: twice contact-frame ankle-centre separation, excluding boot length; tune against foot planting at runtime.",
+      "frames": [
+        {
+          "index": 0,
+          "x": 0,
+          "y": 703,
+          "width": 240,
+          "height": 184,
+          "opaque_bounds": {
+            "x": 85,
+            "y": 1,
+            "width": 93,
+            "height": 179
+          }
+        },
+        {
+          "index": 1,
+          "x": 240,
+          "y": 703,
+          "width": 220,
+          "height": 184,
+          "opaque_bounds": {
+            "x": 55,
+            "y": 1,
+            "width": 116,
+            "height": 179
+          }
+        },
+        {
+          "index": 2,
+          "x": 460,
+          "y": 703,
+          "width": 222,
+          "height": 184,
+          "opaque_bounds": {
+            "x": 56,
+            "y": 1,
+            "width": 96,
+            "height": 179
+          }
+        },
+        {
+          "index": 3,
+          "x": 682,
+          "y": 703,
+          "width": 225,
+          "height": 184,
+          "opaque_bounds": {
+            "x": 63,
+            "y": 1,
+            "width": 96,
+            "height": 179
+          }
+        },
+        {
+          "index": 4,
+          "x": 907,
+          "y": 703,
+          "width": 221,
+          "height": 184,
+          "opaque_bounds": {
+            "x": 63,
+            "y": 1,
+            "width": 97,
+            "height": 179
+          }
+        },
+        {
+          "index": 5,
+          "x": 1128,
+          "y": 703,
+          "width": 220,
+          "height": 184,
+          "opaque_bounds": {
+            "x": 56,
+            "y": 1,
+            "width": 116,
+            "height": 179
+          }
+        },
+        {
+          "index": 6,
+          "x": 1348,
+          "y": 703,
+          "width": 226,
+          "height": 184,
+          "opaque_bounds": {
+            "x": 55,
+            "y": 1,
+            "width": 95,
+            "height": 179
+          }
+        },
+        {
+          "index": 7,
+          "x": 1574,
+          "y": 703,
+          "width": 200,
+          "height": 184,
+          "opaque_bounds": {
+            "x": 61,
+            "y": 1,
+            "width": 94,
+            "height": 179
+          }
+        }
+      ]
+    }
+  ],
+  "status": "Generated under user authorization; no approval pause required",
+  "animation": "Eight-phase grounded walk: contact, settle, passing, reach, opposite contact, settle, opposite passing, reach",
+  "alpha": "Transparent background, opaque character interiors"
+}

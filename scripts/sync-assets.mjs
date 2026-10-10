@@ -1,6 +1,7 @@
 import { copyFile, mkdir } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { NPC_ATLASES, HERO_WALK } from '../world.js';
 
 const project = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const files = [
@@ -8,9 +9,9 @@ const files = [
   'environments/cyberpunk-market-street-v1.png',
   'environments/cyberpunk-canal-street-v1.png',
   'characters/samurai/samurai-idle-v2-ivory.png',
-  'characters/samurai/samurai-walk-v2-ivory.png',
-  'characters/samurai/samurai-walk-v2-ivory.json',
-  ...['npc-everyday-walk-v1', 'npc-workers-walk-v1', 'npc-locals-walk-v1', 'npc-nightlife-walk-v1'].flatMap(name => [
+  `characters/samurai/${HERO_WALK}.png`,
+  `characters/samurai/${HERO_WALK}.json`,
+  ...NPC_ATLASES.flatMap(name => [
     `characters/pedestrians/${name}.png`, `characters/pedestrians/${name}.json`
   ]),
   'vehicles/elevated-train-v1.png',

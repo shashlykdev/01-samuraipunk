@@ -1,0 +1,284 @@
+{
+  "image": "npc-nightlife-walk-v2.png",
+  "width": 1774,
+  "height": 887,
+  "layout": {
+    "rows": 4,
+    "columns": 8
+  },
+  "notes": "Eight chronological grounded walking frames per row with close passing poses in columns2and6. Two leg/shoe refinements narrowed contact shoe-center separation to38\u201352sourcepixels. Row boundaries follow actual transparent gaps. cycle_distance estimates twice maximum contact-pose shoe-center separation in source pixels per complete cycle.",
+  "characters": [
+    {
+      "id": "monk-straw-hat",
+      "name": "Straw-hat monk",
+      "row": 0,
+      "default_direction": 1,
+      "kind": "person",
+      "visual_height": 218,
+      "frames": [
+        {
+          "index": 0,
+          "x": 0,
+          "y": 0,
+          "width": 222,
+          "height": 227
+        },
+        {
+          "index": 1,
+          "x": 222,
+          "y": 0,
+          "width": 222,
+          "height": 227
+        },
+        {
+          "index": 2,
+          "x": 444,
+          "y": 0,
+          "width": 221,
+          "height": 227
+        },
+        {
+          "index": 3,
+          "x": 665,
+          "y": 0,
+          "width": 222,
+          "height": 227
+        },
+        {
+          "index": 4,
+          "x": 887,
+          "y": 0,
+          "width": 222,
+          "height": 227
+        },
+        {
+          "index": 5,
+          "x": 1109,
+          "y": 0,
+          "width": 221,
+          "height": 227
+        },
+        {
+          "index": 6,
+          "x": 1330,
+          "y": 0,
+          "width": 222,
+          "height": 227
+        },
+        {
+          "index": 7,
+          "x": 1552,
+          "y": 0,
+          "width": 222,
+          "height": 227
+        }
+      ],
+      "cycle_distance": 92,
+      "cycle_distance_estimated": true
+    },
+    {
+      "id": "indigo-fashion",
+      "name": "Indigo fashion walker",
+      "row": 1,
+      "default_direction": 1,
+      "kind": "person",
+      "visual_height": 230,
+      "frames": [
+        {
+          "index": 0,
+          "x": 0,
+          "y": 227,
+          "width": 222,
+          "height": 241
+        },
+        {
+          "index": 1,
+          "x": 222,
+          "y": 227,
+          "width": 222,
+          "height": 241
+        },
+        {
+          "index": 2,
+          "x": 444,
+          "y": 227,
+          "width": 221,
+          "height": 241
+        },
+        {
+          "index": 3,
+          "x": 665,
+          "y": 227,
+          "width": 222,
+          "height": 241
+        },
+        {
+          "index": 4,
+          "x": 887,
+          "y": 227,
+          "width": 222,
+          "height": 241
+        },
+        {
+          "index": 5,
+          "x": 1109,
+          "y": 227,
+          "width": 221,
+          "height": 241
+        },
+        {
+          "index": 6,
+          "x": 1330,
+          "y": 227,
+          "width": 222,
+          "height": 241
+        },
+        {
+          "index": 7,
+          "x": 1552,
+          "y": 227,
+          "width": 222,
+          "height": 241
+        }
+      ],
+      "cycle_distance": 86,
+      "cycle_distance_estimated": true
+    },
+    {
+      "id": "cranberry-elder",
+      "name": "Cranberry-coated elder",
+      "row": 2,
+      "default_direction": 1,
+      "kind": "person",
+      "visual_height": 190,
+      "frames": [
+        {
+          "index": 0,
+          "x": 0,
+          "y": 468,
+          "width": 222,
+          "height": 203
+        },
+        {
+          "index": 1,
+          "x": 222,
+          "y": 468,
+          "width": 222,
+          "height": 203
+        },
+        {
+          "index": 2,
+          "x": 444,
+          "y": 468,
+          "width": 221,
+          "height": 203
+        },
+        {
+          "index": 3,
+          "x": 665,
+          "y": 468,
+          "width": 222,
+          "height": 203
+        },
+        {
+          "index": 4,
+          "x": 887,
+          "y": 468,
+          "width": 222,
+          "height": 203
+        },
+        {
+          "index": 5,
+          "x": 1109,
+          "y": 468,
+          "width": 221,
+          "height": 203
+        },
+        {
+          "index": 6,
+          "x": 1330,
+          "y": 468,
+          "width": 222,
+          "height": 203
+        },
+        {
+          "index": 7,
+          "x": 1552,
+          "y": 468,
+          "width": 222,
+          "height": 203
+        }
+      ],
+      "cycle_distance": 92,
+      "cycle_distance_estimated": true
+    },
+    {
+      "id": "blue-tourist",
+      "name": "Blue-puffer tourist",
+      "row": 3,
+      "default_direction": 1,
+      "kind": "person",
+      "visual_height": 210,
+      "frames": [
+        {
+          "index": 0,
+          "x": 0,
+          "y": 671,
+          "width": 222,
+          "height": 216
+        },
+        {
+          "index": 1,
+          "x": 222,
+          "y": 671,
+          "width": 222,
+          "height": 216
+        },
+        {
+          "index": 2,
+          "x": 444,
+          "y": 671,
+          "width": 221,
+          "height": 216
+        },
+        {
+          "index": 3,
+          "x": 665,
+          "y": 671,
+          "width": 222,
+          "height": 216
+        },
+        {
+          "index": 4,
+          "x": 887,
+          "y": 671,
+          "width": 222,
+          "height": 216
+        },
+        {
+          "index": 5,
+          "x": 1109,
+          "y": 671,
+          "width": 221,
+          "height": 216
+        },
+        {
+          "index": 6,
+          "x": 1330,
+          "y": 671,
+          "width": 222,
+          "height": 216
+        },
+        {
+          "index": 7,
+          "x": 1552,
+          "y": 671,
+          "width": 222,
+          "height": 216
+        }
+      ],
+      "cycle_distance": 104,
+      "cycle_distance_estimated": true
+    }
+  ]
+}

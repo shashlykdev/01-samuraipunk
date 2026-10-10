@@ -6,7 +6,8 @@ export const DISTRICTS = [
 ];
 export const WORLD = { width: BLOCK_WIDTH * DISTRICTS.length, height: 941 * 1.18, ground: 941 * .90 * 1.18 };
 export const START_X = BLOCK_WIDTH * .54;
-export const NPC_ATLASES = ['npc-everyday-walk-v1', 'npc-workers-walk-v1', 'npc-locals-walk-v1', 'npc-nightlife-walk-v1'];
+export const NPC_ATLASES = ['npc-everyday-walk-v2', 'npc-workers-walk-v2', 'npc-locals-walk-v2', 'npc-nightlife-walk-v2'];
+export const HERO_WALK = 'samurai-walk-v3-grounded';
 export const STOPS = [
   { id: 'lanterns', x: BLOCK_WIDTH * .12, name: 'Paper Lanterns', label: '01 / A QUIET CORNER',
     copy: 'Under the red lanterns, the noise of the street falls away. A small shrine watches over the people still finding their way home.',

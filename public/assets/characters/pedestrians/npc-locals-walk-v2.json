@@ -1,0 +1,284 @@
+{
+  "image": "npc-locals-walk-v2.png",
+  "width": 1774,
+  "height": 887,
+  "layout": {
+    "rows": 4,
+    "columns": 8
+  },
+  "notes": "Eight chronological grounded walking frames per row. Columns2 and6 refined to passing poses; subsequent leg/shoe refinements narrowed contact shoe-center separation to43\u201347source pixels. Row boundaries follow actual transparent gaps. cycle_distance estimates twice maximum contact-pose shoe-center separation in source pixels per complete cycle.",
+  "characters": [
+    {
+      "id": "punk-headphones",
+      "name": "Violet-haired punk",
+      "row": 0,
+      "default_direction": 1,
+      "kind": "person",
+      "visual_height": 210,
+      "frames": [
+        {
+          "index": 0,
+          "x": 0,
+          "y": 0,
+          "width": 222,
+          "height": 220
+        },
+        {
+          "index": 1,
+          "x": 222,
+          "y": 0,
+          "width": 222,
+          "height": 220
+        },
+        {
+          "index": 2,
+          "x": 444,
+          "y": 0,
+          "width": 221,
+          "height": 220
+        },
+        {
+          "index": 3,
+          "x": 665,
+          "y": 0,
+          "width": 222,
+          "height": 220
+        },
+        {
+          "index": 4,
+          "x": 887,
+          "y": 0,
+          "width": 222,
+          "height": 220
+        },
+        {
+          "index": 5,
+          "x": 1109,
+          "y": 0,
+          "width": 221,
+          "height": 220
+        },
+        {
+          "index": 6,
+          "x": 1330,
+          "y": 0,
+          "width": 222,
+          "height": 220
+        },
+        {
+          "index": 7,
+          "x": 1552,
+          "y": 0,
+          "width": 222,
+          "height": 220
+        }
+      ],
+      "cycle_distance": 94,
+      "cycle_distance_estimated": true
+    },
+    {
+      "id": "bronze-service-android",
+      "name": "Bronze service android",
+      "row": 1,
+      "default_direction": 1,
+      "kind": "person",
+      "visual_height": 218,
+      "frames": [
+        {
+          "index": 0,
+          "x": 0,
+          "y": 220,
+          "width": 222,
+          "height": 222
+        },
+        {
+          "index": 1,
+          "x": 222,
+          "y": 220,
+          "width": 222,
+          "height": 222
+        },
+        {
+          "index": 2,
+          "x": 444,
+          "y": 220,
+          "width": 221,
+          "height": 222
+        },
+        {
+          "index": 3,
+          "x": 665,
+          "y": 220,
+          "width": 222,
+          "height": 222
+        },
+        {
+          "index": 4,
+          "x": 887,
+          "y": 220,
+          "width": 222,
+          "height": 222
+        },
+        {
+          "index": 5,
+          "x": 1109,
+          "y": 220,
+          "width": 221,
+          "height": 222
+        },
+        {
+          "index": 6,
+          "x": 1330,
+          "y": 220,
+          "width": 222,
+          "height": 222
+        },
+        {
+          "index": 7,
+          "x": 1552,
+          "y": 220,
+          "width": 222,
+          "height": 222
+        }
+      ],
+      "cycle_distance": 88,
+      "cycle_distance_estimated": true
+    },
+    {
+      "id": "scarf-musician",
+      "name": "Scarf musician",
+      "row": 2,
+      "default_direction": 1,
+      "kind": "person",
+      "visual_height": 214,
+      "frames": [
+        {
+          "index": 0,
+          "x": 0,
+          "y": 442,
+          "width": 222,
+          "height": 222
+        },
+        {
+          "index": 1,
+          "x": 222,
+          "y": 442,
+          "width": 222,
+          "height": 222
+        },
+        {
+          "index": 2,
+          "x": 444,
+          "y": 442,
+          "width": 221,
+          "height": 222
+        },
+        {
+          "index": 3,
+          "x": 665,
+          "y": 442,
+          "width": 222,
+          "height": 222
+        },
+        {
+          "index": 4,
+          "x": 887,
+          "y": 442,
+          "width": 222,
+          "height": 222
+        },
+        {
+          "index": 5,
+          "x": 1109,
+          "y": 442,
+          "width": 221,
+          "height": 222
+        },
+        {
+          "index": 6,
+          "x": 1330,
+          "y": 442,
+          "width": 222,
+          "height": 222
+        },
+        {
+          "index": 7,
+          "x": 1552,
+          "y": 442,
+          "width": 222,
+          "height": 222
+        }
+      ],
+      "cycle_distance": 86,
+      "cycle_distance_estimated": true
+    },
+    {
+      "id": "grocery-woman",
+      "name": "Grocery shopper",
+      "row": 3,
+      "default_direction": 1,
+      "kind": "person",
+      "visual_height": 204,
+      "frames": [
+        {
+          "index": 0,
+          "x": 0,
+          "y": 664,
+          "width": 222,
+          "height": 223
+        },
+        {
+          "index": 1,
+          "x": 222,
+          "y": 664,
+          "width": 222,
+          "height": 223
+        },
+        {
+          "index": 2,
+          "x": 444,
+          "y": 664,
+          "width": 221,
+          "height": 223
+        },
+        {
+          "index": 3,
+          "x": 665,
+          "y": 664,
+          "width": 222,
+          "height": 223
+        },
+        {
+          "index": 4,
+          "x": 887,
+          "y": 664,
+          "width": 222,
+          "height": 223
+        },
+        {
+          "index": 5,
+          "x": 1109,
+          "y": 664,
+          "width": 221,
+          "height": 223
+        },
+        {
+          "index": 6,
+          "x": 1330,
+          "y": 664,
+          "width": 222,
+          "height": 223
+        },
+        {
+          "index": 7,
+          "x": 1552,
+          "y": 664,
+          "width": 222,
+          "height": 223
+        }
+      ],
+      "cycle_distance": 94,
+      "cycle_distance_estimated": true
+    }
+  ]
+}

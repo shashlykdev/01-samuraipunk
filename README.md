@@ -26,7 +26,7 @@ Discovered stops are saved in browser storage; the original three discoveries su
 
 The editable source artwork, image-generation prompts, and animation metadata are in the parent `assets` directory. The game's selected runtime copies are under `public/assets`. Run `npm run sync-assets` after changes to the parent artwork, then rebuild.
 
-Sprite sheets use explicit source rectangles and ground anchors so unequal generated frame widths keep a consistent character scale. Four NPC atlases contain sixteen individual designs with four relaxed, short-stride frames each. All pedestrians are opaque and walk at 26–38 world pixels per second; the slower samurai pace remains 100 (170 while holding Shift). Each NPC appears once across the whole route. Original generated PNGs remain intact. The train uses the source crop recorded in its metadata.
+Sprite sheets use explicit source rectangles and ground anchors so unequal generated frame widths keep a consistent character scale. The samurai and sixteen individual NPC designs each have eight walk frames, including contact and passing poses. Animation advances with distance traveled, using each character's measured stride. Contact shadows sit under the planted boots. All pedestrians are opaque, walk at 26–36 world pixels per second, and use lanes 94–118 pixels above the samurai's feet. The samurai walks at 80 (135 while holding Shift), with a shorter stride and low foot lift. Each NPC appears once across the whole route. Original generated PNGs remain intact. The train uses the source crop recorded in its metadata.
 
 ## Checks
 

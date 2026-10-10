@@ -1,5 +1,5 @@
-import { clamp, movementAxis, safeDelta, cameraTarget, districtIndex, movePlayer, wrapPedestrian, closestStop, restoreVisits } from './engine.js';
-import { BLOCK_WIDTH, DISTRICTS, WORLD, START_X, NPC_ATLASES, STOPS as stops } from './world.js';
+import { clamp, movementAxis, safeDelta, cameraTarget, districtIndex, advanceWalk, npcLane, movePlayer, wrapPedestrian, closestStop, restoreVisits } from './engine.js';
+import { BLOCK_WIDTH, DISTRICTS, WORLD, START_X, NPC_ATLASES, HERO_WALK, STOPS as stops } from './world.js';
 
 const $ = id => document.getElementById(id);
 const canvas = $('scene');
@@ -69,9 +69,23 @@ function prepareSprite(image, metadata, type, defaultDirection) {
       }
     }
     const anchor = frame.anchor ?? { x: (weight ? weightedX / weight : (x0 + x1) / 2) - frame.height * .02 * defaultDirection, y: y1 + 1 };
-    return { ...frame, anchor, bounds: { x: Math.max(0, x0 - 2), y: Math.max(0, y0 - 2), width: Math.min(frame.width, x1 + 3) - Math.max(0, x0 - 2), height: Math.min(frame.height, y1 + 3) - Math.max(0, y0 - 2) } };
+    const footprints = [];
+    let start = null;
+    for (let x = x0; x <= x1 + 1; x++) {
+      let touches = false;
+      for (let y = y1 - Math.max(2, Math.floor(bodyHeight * .018)); y <= y1 && x <= x1; y++) {
+        if (data[((y + frame.y) * width + frame.x + x) * 4 + 3] > 120) { touches = true; break; }
+      }
+      if (touches && start === null) start = x;
+      if (!touches && start !== null) {
+        if (x - start >= bodyHeight * .025) footprints.push({ x: (start + x) / 2, width: x - start });
+        start = null;
+      }
+    }
+    return { ...frame, anchor, footprints, bounds: { x: Math.max(0, x0 - 2), y: Math.max(0, y0 - 2), width: Math.min(frame.width, x1 + 3) - Math.max(0, x0 - 2), height: Math.min(frame.height, y1 + 3) - Math.max(0, y0 - 2) } };
   });
-  return { image, frames: prepared, sourceHeight: frames[0].height, defaultDirection };
+  const visualHeight = Math.max(...prepared.map(frame => frame.bounds.height));
+  return { image, frames: prepared, sourceHeight: frames[0].height, visualHeight, cycleDistance: metadata?.cycle_distance ?? visualHeight * .42, defaultDirection };
 }
 
 async function loadCity() {
@@ -83,8 +97,8 @@ async function loadCity() {
       ]))),
       Promise.all([
       loadImage('characters/samurai/samurai-idle-v2-ivory.png'),
-      loadImage('characters/samurai/samurai-walk-v2-ivory.png'),
-      loadJson('characters/samurai/samurai-walk-v2-ivory.json'),
+      loadImage(`characters/samurai/${HERO_WALK}.png`),
+      loadJson(`characters/samurai/${HERO_WALK}.json`),
       loadImage('vehicles/elevated-train-v1.png'),
       loadJson('vehicles/elevated-train-v1.json')
       ])
@@ -92,20 +106,24 @@ async function loadCity() {
     art.backgrounds = backgrounds;
     art.idle = prepareSprite(results[0], null, 'hero', 1);
     art.hero = prepareSprite(results[1], results[2], 'hero', 1);
+    art.idle.height = 224 * art.idle.sourceHeight / art.idle.visualHeight;
+    art.hero.height = 224 * art.hero.sourceHeight / art.hero.visualHeight;
+    art.hero.worldCycle = art.hero.cycleDistance * art.hero.height / art.hero.sourceHeight;
     art.train = results[3];
     art.trainCrop = results[4].suggested_source_rectangle;
     const people = npcAtlases.flatMap(([image, metadata]) => metadata.characters.map(character => {
       const umbrella = character.kind === 'umbrella' || /umbrella|commuter/i.test(character.id);
       const sprite = prepareSprite(image, character, umbrella ? 'commuter' : 'person', character.default_direction ?? 1);
-      const visualHeight = Math.max(...sprite.frames.map(frame => frame.bounds.height));
-      return { id: character.id, sprite, height: (character.visual_height ?? (umbrella ? 250 : 210)) * sprite.sourceHeight / visualHeight };
+      return { id: character.id, sprite, height: (character.visual_height ?? (umbrella ? 250 : 210)) * sprite.sourceHeight / sprite.visualHeight };
     }));
     if (new Set(people.map(person => person.id)).size < 15) throw new Error('The city needs at least fifteen distinct pedestrians.');
-    pedestrians = people.map((person, index) => ({
-      ...person, x: (index + .3) / people.length * WORLD.width,
-      direction: index % 2 ? 1 : -1, speed: 26 + ((index * 5) % 13), phase: index * .79,
-      size: .94 + (index % 4) * .025, ground: WORLD.ground - 22 - (index % 3) * 12
-    }));
+    pedestrians = people.map((person, index) => {
+      const size = .84 + (index % 3) * .025;
+      return { ...person, x: (index + .3) / people.length * WORLD.width,
+        direction: index % 2 ? 1 : -1, speed: 26 + ((index * 5) % 11), phase: index * .79,
+        size, ground: npcLane(WORLD.ground, index),
+        cycleDistance: person.sprite.cycleDistance * person.height * size / person.sprite.sourceHeight };
+    });
     state.loaded = true;
     state.mode = 'welcome';
     resize();
@@ -151,6 +169,16 @@ function drawSprite(sprite, phase, x, ground, height, direction = 1) {
 function shadow(x, ground, width, opacity = .20) {
   ctx.fillStyle = `rgba(0,4,13,${opacity})`;
   ctx.beginPath(); ctx.ellipse(x, ground + 2, width, 5, 0, 0, Math.PI * 2); ctx.fill();
+}
+function footShadows(sprite, phase, x, ground, height, direction) {
+  const frame = sprite.frames[Math.floor(phase) % sprite.frames.length];
+  const scale = height / sprite.sourceHeight;
+  const flip = direction === sprite.defaultDirection ? 1 : -1;
+  ctx.fillStyle = 'rgba(0,3,10,.32)';
+  for (const foot of frame.footprints) {
+    const footX = x + (foot.x - frame.anchor.x) * scale * flip;
+    ctx.beginPath(); ctx.ellipse(footX, ground + 1, Math.max(3, foot.width * scale * .53), 2, 0, 0, Math.PI * 2); ctx.fill();
+  }
 }
 function drawTrain() {
   const crop = art.trainCrop;
@@ -231,7 +259,8 @@ function render() {
   for (const person of crowd) {
     if (person.x < state.camera - 160 || person.x > state.camera + view.worldWidth + 160) continue;
     const height = person.height * person.size;
-    shadow(person.x, person.ground, 26 * person.size, .14);
+    shadow(person.x, person.ground, 22 * person.size, .14);
+    footShadows(person.sprite, person.phase, person.x, person.ground, height, person.direction);
     drawSprite(person.sprite, person.phase, person.x, person.ground, height, person.direction);
   }
   if (state.mode === 'playing' && state.nearest) {
@@ -240,7 +269,9 @@ function render() {
     ctx.beginPath(); ctx.arc(stop.x, WORLD.ground - 160, 3.5, 0, Math.PI * 2); ctx.fill();
   }
   shadow(player.x, WORLD.ground, 34, .25);
-  drawSprite(player.moving ? art.hero : art.idle, player.phase, player.x, WORLD.ground, 246, player.direction);
+  const hero = player.moving ? art.hero : art.idle;
+  footShadows(hero, player.phase, player.x, WORLD.ground, hero.height, player.direction);
+  drawSprite(hero, player.phase, player.x, WORLD.ground, hero.height, player.direction);
   ctx.restore();
   drawRain(true);
 }
@@ -249,8 +280,9 @@ function update(dt) {
   if (!state.loaded || !['welcome', 'playing'].includes(state.mode)) return;
   state.clock += dt;
   for (const person of pedestrians) {
-    person.x = wrapPedestrian(person.x + person.direction * person.speed * dt, WORLD.width);
-    person.phase += dt * person.speed / 14;
+    const moved = person.speed * dt;
+    person.x = wrapPedestrian(person.x + person.direction * moved, WORLD.width);
+    person.phase = advanceWalk(person.phase, moved, person.cycleDistance, person.sprite.frames.length);
   }
   if (state.mode === 'playing') {
     state.elapsed += dt;
@@ -260,7 +292,7 @@ function update(dt) {
     const moved = player.x - before;
     player.moving = Math.abs(moved) > .001;
     if (axis) player.direction = axis;
-    if (player.moving) player.phase += Math.abs(moved) / 34;
+    if (player.moving) player.phase = advanceWalk(player.phase, moved, art.hero.worldCycle, art.hero.frames.length);
     state.nearest = closestStop(player.x, stops);
   } else player.moving = false;
   const target = cameraTarget(player.x, view.worldWidth, WORLD.width);
@@ -287,6 +319,9 @@ function updateHud() {
   canvas.dataset.npcTypes = String(pedestrians.length);
   canvas.dataset.npcIds = pedestrians.map(person => person.id).join(',');
   canvas.dataset.maxNpcSpeed = String(Math.max(0, ...pedestrians.map(person => person.speed)));
+  canvas.dataset.npcGroundGap = String(Math.min(...pedestrians.map(person => WORLD.ground - person.ground)));
+  canvas.dataset.heroWalkFrames = String(art.hero?.frames.length ?? 0);
+  canvas.dataset.heroCycleDistance = art.hero?.worldCycle.toFixed(1) ?? '0';
   $('district-name').textContent = `${String(district + 1).padStart(2, '0')} / ${DISTRICTS[district].name.toUpperCase()}`;
   $('journey-position').style.left = `${player.x / WORLD.width * 100}%`;
   $('journey-route').setAttribute('aria-label', `District ${district + 1} of ${DISTRICTS.length}: ${DISTRICTS[district].name}`);
