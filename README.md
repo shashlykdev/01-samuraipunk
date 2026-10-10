@@ -9,8 +9,6 @@ npm run build
 npm run preview
 ```
 
-Open http://127.0.0.1:8766. No package installation is required.
-
 ## Controls
 
 - A / D or arrow keys: walk left and right.
