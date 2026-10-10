@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#080b12">
+  <meta name="description" content="Walk a rain-soaked cyberpunk city as an ivory-armored samurai. An atmospheric pixel-art game with passing commuters and late-night storefronts.">
+  <title>Neon Ronin — A midnight city walk</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<main id="game" aria-label="Neon Ronin city walking game">
+  <canvas id="scene" tabindex="0" aria-label="City scene. Walk with A and D or the left and right arrows. Hold Shift to walk faster. Press E near a storefront to explore. Press Escape to pause."></canvas>
+  <div class="scene-shade" aria-hidden="true"></div>
+  <header class="hud" id="hud" hidden>
+    <div class="wordmark">NEON RONIN<span>THE LANTERN DISTRICT</span></div>
+    <div class="hud-actions">
+      <button id="sound" type="button" aria-pressed="false">Sound off</button>
+      <button id="fullscreen" type="button">Fullscreen</button>
+      <button id="pause" type="button" aria-label="Pause game">Pause <kbd>Esc</kbd></button>
+    </div>
+  </header>
+  <section class="welcome" id="welcome" aria-labelledby="title">
+    <div class="welcome-inner">
+      <p class="kicker"><span></span> A MIDNIGHT CITY WALK</p>
+      <h1 id="title">NEON<br><em>RONIN</em><span class="kanji" aria-hidden="true">浪人</span></h1>
+      <p class="welcome-copy">Rain on the pavement. The last train overhead.<br>Take the long way through a city that never sleeps.</p>
+      <button class="primary" id="start" type="button" disabled>Loading the city…</button>
+      <p class="load-status" id="load-status" role="status">Gathering the city’s lights and faces.</p>
+      <div class="welcome-controls"><span><kbd>←</kbd> <kbd>→</kbd> Walk</span><span><kbd>Shift</kbd> Quick step</span><span><kbd>E</kbd> Explore</span></div>
+    </div>
+    <div class="edition">01 / THE LANTERN DISTRICT<span>PIXEL ART · NIGHT WALK</span></div>
+  </section>
+  <footer class="walk-hud" id="walk-hud" hidden>
+    <div class="hint" id="control-hint"><kbd>A</kbd><kbd>D</kbd> walk <span>·</span> <kbd>Shift</kbd> quick step</div>
+    <button class="interact" id="interact" type="button" hidden><kbd>E</kbd><span id="interact-name">Explore</span></button>
+    <div class="stops"><span id="stop-count">0 / 3</span> NIGHT STOPS</div>
+  </footer>
+  <div class="touch-controls" id="touch-controls" hidden>
+    <div class="touch-movement"><button type="button" id="left" aria-label="Walk left">←</button><button type="button" id="right" aria-label="Walk right">→</button></div>
+    <button type="button" id="touch-explore">Explore</button>
+  </div>
+  <div class="toast" id="toast" role="status" hidden></div>
+  <dialog id="pause-dialog" aria-labelledby="pause-title">
+    <p class="kicker">A MOMENT BETWEEN THE LIGHTS</p><h2 id="pause-title">The city can wait.</h2>
+    <p>Walk with A / D or the arrow keys. Hold Shift for a quicker step. Explore the lit storefronts with E.</p>
+    <div class="dialog-actions"><button class="primary" id="resume" type="button">Continue walking</button><button class="secondary" id="restart" type="button">Start a new night</button></div>
+  </dialog>
+  <dialog id="stop-dialog" aria-labelledby="stop-title">
+    <p class="kicker" id="stop-label">NIGHT STOP</p><h2 id="stop-title"></h2>
+    <p id="stop-copy"></p><p class="stop-detail" id="stop-detail"></p>
+    <button class="primary" id="leave-stop" type="button">Back to the street</button>
+  </dialog>
+  <noscript><div class="no-script">Neon Ronin needs JavaScript to run.</div></noscript>
+</main>
+<script type="module" src="./game.js"></script>
+</body>
+</html>

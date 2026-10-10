@@ -1,0 +1,47 @@
+{
+  "image": "samurai-walk-v2-ivory.png",
+  "status": "updated walking sheet approved by user on 2026-10-10",
+  "palette_status": "ivory palette approved by user on 2026-10-10",
+  "reference": "samurai-idle-v2-ivory.png",
+  "source_sheet": "samurai-walk-v1.png",
+  "direction": "right",
+  "image_size": {
+    "width": 2170,
+    "height": 725
+  },
+  "layout": {
+    "columns": 4,
+    "rows": 1,
+    "use_explicit_frame_rectangles": true
+  },
+  "frames": [
+    {
+      "index": 0,
+      "x": 0,
+      "y": 0,
+      "width": 542,
+      "height": 725
+    },
+    {
+      "index": 1,
+      "x": 542,
+      "y": 0,
+      "width": 543,
+      "height": 725
+    },
+    {
+      "index": 2,
+      "x": 1085,
+      "y": 0,
+      "width": 543,
+      "height": 725
+    },
+    {
+      "index": 3,
+      "x": 1628,
+      "y": 0,
+      "width": 542,
+      "height": 725
+    }
+  ]
+}

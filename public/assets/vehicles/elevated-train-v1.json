@@ -1,0 +1,34 @@
+{
+  "image": "elevated-train-v1.png",
+  "status": "generated under user authorization; no approval pause required",
+  "reference": "../environments/cyberpunk-street-v1.png",
+  "direction": "left",
+  "cars": 3,
+  "image_size": {
+    "width": 1983,
+    "height": 793
+  },
+  "suggested_source_rectangle": {
+    "x": 34,
+    "y": 287,
+    "width": 1903,
+    "height": 243
+  },
+  "visible_subject_rectangle_at_alpha_above_16": {
+    "x": 49,
+    "y": 302,
+    "width": 1873,
+    "height": 213
+  },
+  "alpha": {
+    "mode": "RGBA",
+    "minimum": 0,
+    "maximum": 255,
+    "fully_transparent_fraction": 0.7609
+  },
+  "notes": [
+    "Original generated PNG and its alpha channel are preserved.",
+    "Very low alpha stray pixels extend beyond the meaningful train silhouette. Use the suggested source rectangle when drawing it.",
+    "At width 650, preserve the visible train's approximately 8.79:1 aspect ratio, yielding about 74px height, or size to the scene's rail height."
+  ]
+}

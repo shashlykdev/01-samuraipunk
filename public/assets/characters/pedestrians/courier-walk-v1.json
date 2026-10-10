@@ -1,0 +1,75 @@
+{
+  "image": "courier-walk-v1.png",
+  "status": "generated under user authorization; no approval pause required",
+  "reference": "courier-idle-v1.png",
+  "direction": "right",
+  "image_size": {
+    "width": 1983,
+    "height": 793
+  },
+  "layout": {
+    "columns": 4,
+    "rows": 1,
+    "use_explicit_frame_rectangles": true
+  },
+  "frames": [
+    {
+      "index": 0,
+      "x": 0,
+      "y": 0,
+      "width": 570,
+      "height": 793,
+      "pose": "right leg forward contact",
+      "anchor": {
+        "x": 296,
+        "y": 762
+      }
+    },
+    {
+      "index": 1,
+      "x": 570,
+      "y": 0,
+      "width": 430,
+      "height": 793,
+      "pose": "left leg passing",
+      "anchor": {
+        "x": 182,
+        "y": 762
+      }
+    },
+    {
+      "index": 2,
+      "x": 1000,
+      "y": 0,
+      "width": 525,
+      "height": 793,
+      "pose": "left leg forward contact",
+      "anchor": {
+        "x": 264,
+        "y": 761
+      }
+    },
+    {
+      "index": 3,
+      "x": 1525,
+      "y": 0,
+      "width": 458,
+      "height": 793,
+      "pose": "right leg passing",
+      "anchor": {
+        "x": 224,
+        "y": 761
+      }
+    }
+  ],
+  "alpha": {
+    "mode": "RGBA",
+    "minimum": 0,
+    "maximum": 255
+  },
+  "notes": [
+    "Generated image has uneven column spacing. Use the explicit rectangles; do not split by image width / 4.",
+    "Anchors are approximate ground-center alignment points in each frame. Draw all frames at the same source-pixel scale to avoid width changes affecting body size.",
+    "The generated alpha is preserved without background keying or image manipulation."
+  ]
+}
