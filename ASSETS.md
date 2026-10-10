@@ -11,6 +11,10 @@ All new PNG artwork was created with the built-in image-generation tool. Selecte
 
 Both sheets are 1774 × 887 RGBA with transparent backgrounds. The samurai has sixteen poses; each enemy has eight. Their prompt files preserve the initial art direction and final wider-layout refinement.
 
+## Corrected civilian arms
+
+`public/assets/characters/pedestrians/npc-everyday-walk-v3.{png,json,prompt.txt}` replaces the everyday civilian atlas. In all eight umbrella-commuter frames, the holding hand grips the shaft in front of the chest with a connected, naturally bent arm. The free arm swings beside the coat. The four designs, original leg poses, and calibrated short stride are retained. The exact edit prompt accompanies the transparent 1774 × 887 PNG and measured frame metadata.
+
 ## Fifteen new city backgrounds
 
 Every selected background is 1672 × 941 RGB. For each basename below, the PNG and exact `.prompt.txt` are under `public/assets/environments/`.

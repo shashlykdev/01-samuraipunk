@@ -8,6 +8,7 @@ const files = [
   ...DISTRICTS.flatMap(district => [`environments/${district.image}`, `environments/${district.image.replace('.png', '.prompt.txt')}`]),
   'environments/cyberpunk-rooftop-v1.initial.prompt.txt', 'environments/cyberpunk-dawn-gate-v1.initial.prompt.txt',
   'characters/samurai/samurai-idle-v2-ivory.png',
+  'characters/pedestrians/npc-everyday-walk-v3.prompt.txt',
   `characters/samurai/${HERO_WALK}.png`,
   `characters/samurai/${HERO_WALK}.json`,
   `characters/samurai/${HERO_ACTIONS}.png`, `characters/samurai/${HERO_ACTIONS}.json`,

@@ -21,7 +21,7 @@ export const DISTRICTS = [
 ];
 export const WORLD = { width: BLOCK_WIDTH * DISTRICTS.length, height: 941 * 1.18, ground: 941 * .90 * 1.18 };
 export const START_X = BLOCK_WIDTH * .54;
-export const NPC_ATLASES = ['npc-everyday-walk-v2', 'npc-workers-walk-v2', 'npc-locals-walk-v2', 'npc-nightlife-walk-v2'];
+export const NPC_ATLASES = ['npc-everyday-walk-v3', 'npc-workers-walk-v2', 'npc-locals-walk-v2', 'npc-nightlife-walk-v2'];
 export const HERO_WALK = 'samurai-walk-v3-grounded';
 export const HERO_ACTIONS = 'samurai-actions-v1';
 export const ENEMY_ATLAS = 'cyber-raiders-v1';
