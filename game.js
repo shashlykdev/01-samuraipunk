@@ -2,14 +2,17 @@ import { clamp, movementAxis, safeDelta, cameraTarget, districtIndex, advanceWal
 import { BLOCK_WIDTH, DISTRICTS, WORLD, START_X, NPC_ATLASES, HERO_WALK, STOPS as stops } from './world.js';
 import { HERO_ACTIONS, ENEMY_ATLAS, ENEMY_SPAWNS } from './world.js';
 import { COMBOS, createHero, createEnemy, requestJump, requestAttack, requestDodge, attackFrame, stepCombat } from './combat.js';
+import { createTouchInput, gameViewport } from './mobile.js';
 
 const $ = id => document.getElementById(id);
 const canvas = $('scene');
+const keyboardSceneDescription = canvas.getAttribute('aria-label');
 const ctx = canvas.getContext('2d', { alpha: false });
 const SAVE_KEY = 'neon-ronin-night-stops-v1';
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const keys = new Set();
-const touch = { left: false, right: false };
+const touch = createTouchInput();
+const touchMedia = matchMedia('(any-pointer: coarse), (max-width: 900px)');
 const player = createHero(START_X);
 const state = { mode: 'loading', clock: 0, camera: 0, nearest: null, loaded: false, muted: true, elapsed: 0,
   hitstop: 0, shake: 0, district: 0, checkpoint: START_X, checkpointIndex: 0, won: false, traveling: false };
@@ -116,7 +119,7 @@ async function loadCity() {
   try {
     art.backgrounds = Array(DISTRICTS.length).fill(null);
     const [, npcAtlases, results] = await Promise.all([
-      Promise.all([loadDistrict(0), loadDistrict(1)]),
+      loadDistrict(0),
       Promise.all(NPC_ATLASES.map(name => Promise.all([
         loadImage(`characters/pedestrians/${name}.png`), loadJson(`characters/pedestrians/${name}.json`)
       ]))),
@@ -167,13 +170,15 @@ async function loadCity() {
         size, ground: npcLane(WORLD.ground, index),
         cycleDistance: person.sprite.cycleDistance * person.height * size / person.sprite.sourceHeight };
     });
+    // Opaque bounds and footprints are now recorded; release the large startup pixel buffers.
+    for (const image of [results[0], results[1], results[5], results[7], ...npcAtlases.map(([image]) => image)]) spritePixels.delete(image);
     state.loaded = true;
     state.mode = 'welcome';
     resize();
     state.camera = cameraTarget(player.x, view.worldWidth, WORLD.width);
     $('start').disabled = false;
     $('start').textContent = 'Enter the city';
-    $('load-status').textContent = 'Ready when you are. Press Enter to begin.';
+    $('load-status').textContent = touchMedia.matches ? 'Ready. Tap to enter the city.' : 'Ready when you are. Press Enter to begin.';
     updateHud();
   } catch (error) {
     console.error(error);
@@ -185,18 +190,29 @@ async function loadCity() {
 }
 
 function resize() {
+  const root = $('game');
+  const bounds = root.getBoundingClientRect();
+  const style = getComputedStyle(root);
+  const layout = gameViewport(bounds.width, bounds.height, touchMedia.matches, parseFloat(style.getPropertyValue('--safe-top')) || 0, parseFloat(style.getPropertyValue('--safe-bottom')) || 0);
+  if (root.classList.contains('portrait') !== layout.portrait) releaseControls();
+  root.classList.toggle('touch-ui', touchMedia.matches);
+  root.classList.toggle('portrait', layout.portrait);
+  canvas.setAttribute('aria-label', touchMedia.matches ? 'City scene. Hold the arrow buttons to move and Katana to chain attacks. Tap Jump, Dodge, City map, Pause, or Explore. Rotate for a wider view.' : keyboardSceneDescription);
+  canvas.style.position = 'absolute'; canvas.style.top = `${layout.top}px`; canvas.style.height = `${layout.height}px`;
   const rect = canvas.getBoundingClientRect();
   view.width = rect.width; view.height = rect.height;
-  view.dpr = Math.min(devicePixelRatio || 1, 2);
+  view.dpr = Math.min(devicePixelRatio || 1, touchMedia.matches ? 1.5 : 2);
   canvas.width = Math.round(view.width * view.dpr);
   canvas.height = Math.round(view.height * view.dpr);
-  view.worldHeight = Math.min(941, WORLD.width / (view.width / view.height));
+  view.worldHeight = layout.worldHeight;
   view.scale = view.height / view.worldHeight;
   view.worldWidth = view.width / view.scale;
-  view.cameraY = WORLD.ground - view.worldHeight * .89;
+  view.cameraY = WORLD.ground - view.worldHeight * layout.groundRatio;
   state.camera = clamp(state.camera, 0, Math.max(0, WORLD.width - view.worldWidth));
 }
-new ResizeObserver(resize).observe(canvas);
+new ResizeObserver(resize).observe($('game'));
+touchMedia.addEventListener('change', () => { releaseControls(); resize(); });
+window.visualViewport?.addEventListener('resize', resize);
 
 function drawSprite(sprite, phase, x, ground, height, direction = 1) {
   const frame = sprite.frames[Math.floor(phase) % sprite.frames.length];
@@ -446,6 +462,7 @@ function update(dt) {
   }
   if (state.mode === 'playing') {
     state.elapsed += dt;
+    if (touch.attack) swingKatana();
     const axis = movementAxis(keys.has('KeyA') || keys.has('ArrowLeft') || touch.left, keys.has('KeyD') || keys.has('ArrowRight') || touch.right);
     const simulationDelta = state.hitstop > 0 ? 0 : dt;
     state.hitstop = Math.max(0, state.hitstop - dt);
@@ -498,6 +515,9 @@ function updateHud() {
   canvas.dataset.kills = String(player.kills);
   canvas.dataset.enemyCount = String(enemies.length);
   canvas.dataset.sectionCount = String(DISTRICTS.length);
+  canvas.dataset.touchMode = String(touchMedia.matches);
+  canvas.dataset.viewWorldWidth = view.worldWidth.toFixed(1);
+  canvas.dataset.touchHeld = ['left', 'right', 'attack'].filter(control => touch.has(control)).join(',');
   canvas.dataset.checkpoint = String(state.checkpointIndex + 1);
   canvas.dataset.nearestEnemyHealth = String(enemies.filter(foe => foe.health > 0).sort((a, b) => Math.abs(a.x - player.x) - Math.abs(b.x - player.x))[0]?.health ?? 0);
   $('district-name').textContent = `${String(district + 1).padStart(2, '0')} / ${DISTRICTS[district].name.toUpperCase()}`;
@@ -506,12 +526,14 @@ function updateHud() {
   $('stop-count').textContent = `${visits.size} / ${stops.length}`;
   $('health').value = player.health; $('health-value').textContent = `${player.health} / ${player.maxHealth}`;
   $('stamina').value = player.stamina;
+  $('touch-dodge').classList.toggle('unavailable', player.stamina < 30 || player.dodgeCooldown > 0 || player.y > 0 || player.hurt > 0);
   $('kill-count').textContent = `${player.kills} DEFEATED`; $('score').textContent = String(player.score).padStart(6, '0');
   $('combo').hidden = player.hitChain < 2 && !player.attack;
   $('combo-count').textContent = player.hitChain >= 2 ? `${player.hitChain} HITS` : '';
   $('combo-name').textContent = player.attack ? `${player.attack.stage + 1} / 3 · ${COMBOS[player.attack.stage].name}` : 'KEEP THE RHYTHM';
   if (state.won) { $('objective').firstChild.textContent = 'DAWN GATE CLEARED'; $('objective').querySelector('span').textContent = 'Keep exploring the city.'; }
   const available = state.mode === 'playing' && state.nearest;
+  $('game').classList.toggle('can-explore', Boolean(available));
   $('interact').hidden = !available;
   if (available) $('interact-name').textContent = `${state.nearest.name}${visits.has(state.nearest.id) ? ' · revisit' : ''}`;
   $('touch-explore').disabled = !available;
@@ -535,13 +557,17 @@ function activateCheckpoint(index) {
     showToast(`${DISTRICTS[index].name} · Checkpoint reached. Vitality restored.`);
   }
 }
-function releaseControls() { keys.clear(); touch.left = false; touch.right = false; player.moving = false; }
+function releaseControls() {
+  keys.clear(); touch.clear(); player.moving = false;
+  for (const button of $('touch-controls').querySelectorAll('button')) button.classList.remove('pressed');
+}
 function startWalk() {
   if (!state.loaded || state.mode !== 'welcome') return;
   state.mode = 'playing';
   $('welcome').hidden = true; $('hud').hidden = false; $('walk-hud').hidden = false; $('touch-controls').hidden = false;
   $('combat-hud').hidden = false; $('objective').hidden = false;
   canvas.focus(); updateHud();
+  prefetchDistricts(0);
 }
 function pauseWalk() {
   if (state.mode !== 'playing') return;
@@ -680,9 +706,6 @@ $('map').addEventListener('click', openMap);
 $('close-map').addEventListener('click', closeMap);
 $('retry').addEventListener('click', retryCheckpoint);
 $('continue-city').addEventListener('click', continueCity);
-$('touch-jump').addEventListener('pointerdown', event => { event.preventDefault(); if (state.mode === 'playing') requestJump(player); });
-$('touch-attack').addEventListener('pointerdown', event => { event.preventDefault(); swingKatana(); });
-$('touch-dodge').addEventListener('pointerdown', event => { event.preventDefault(); if (state.mode === 'playing') requestDodge(player, movementAxis(touch.left, touch.right)); });
 canvas.addEventListener('pointerdown', event => { if (event.pointerType === 'mouse' && event.button === 0 && state.mode === 'playing') { canvas.focus(); swingKatana(); } });
 $('interact').addEventListener('click', explore);
 $('touch-explore').addEventListener('click', explore);
@@ -729,14 +752,21 @@ document.addEventListener('visibilitychange', () => {
   lastFrame = performance.now();
   if (document.hidden) { releaseControls(); audio?.suspend(); if (state.mode === 'playing') pauseWalk(); }
 });
-for (const direction of ['left', 'right']) {
-  const button = $(direction);
+for (const [control, id] of [['left', 'left'], ['right', 'right'], ['jump', 'touch-jump'], ['attack', 'touch-attack'], ['dodge', 'touch-dodge']]) {
+  const button = $(id);
   button.addEventListener('pointerdown', event => {
-    if (state.mode !== 'playing') return;
-    event.preventDefault(); touch[direction] = true; button.setPointerCapture(event.pointerId);
+    event.preventDefault();
+    if (state.mode !== 'playing' || (event.pointerType === 'mouse' && event.button !== 0)) return;
+    touch.press(event.pointerId, control); button.setPointerCapture(event.pointerId); button.classList.add('pressed');
+    if (control === 'jump') requestJump(player);
+    if (control === 'attack') swingKatana();
+    if (control === 'dodge') requestDodge(player, movementAxis(touch.left, touch.right));
   });
-  for (const event of ['pointerup', 'pointercancel', 'lostpointercapture']) button.addEventListener(event, () => { touch[direction] = false; });
+  for (const name of ['pointerup', 'pointercancel', 'lostpointercapture']) button.addEventListener(name, event => {
+    touch.release(event.pointerId); button.classList.toggle('pressed', touch.has(control));
+  });
 }
+for (const element of [canvas, $('touch-controls')]) element.addEventListener('contextmenu', event => event.preventDefault());
 resize();
 requestAnimationFrame(frame);
 loadCity();

@@ -36,7 +36,8 @@
       <p class="welcome-copy">Eighteen districts. One road to the city gate.<br>Draw your katana. Find your rhythm. Survive until dawn.</p>
       <button class="primary" id="start" type="button" disabled>Loading the city…</button>
       <p class="load-status" id="load-status" role="status">Gathering the city’s lights and faces.</p>
-      <div class="welcome-controls"><span><kbd>←</kbd> <kbd>→</kbd> Move</span><span><kbd>Space</kbd> Jump</span><span><kbd>J</kbd> Katana / combo</span><span><kbd>K</kbd> Dodge</span></div>
+      <div class="welcome-controls desktop-instructions"><span><kbd>←</kbd> <kbd>→</kbd> Move</span><span><kbd>Space</kbd> Jump</span><span><kbd>J</kbd> Katana / combo</span><span><kbd>K</kbd> Dodge</span></div>
+      <p class="touch-instructions welcome-touch">Hold arrows to move. Hold Katana to chain cuts.<br>Tap Jump or Dodge. Turn sideways for a wider view.</p>
     </div>
     <div class="edition">18 CONNECTED DISTRICTS<span>PIXEL ART · SAMURAI ACTION</span></div>
   </section>
@@ -47,15 +48,16 @@
     <div class="stops"><span id="stop-count">0 / 13</span> NIGHT STOPS</div>
   </footer>
   <div class="touch-controls" id="touch-controls" hidden>
-    <div class="touch-movement"><button type="button" id="left" aria-label="Walk left">←</button><button type="button" id="right" aria-label="Walk right">→</button></div>
-    <div class="touch-actions"><button type="button" id="touch-jump" aria-label="Jump">↑</button><button type="button" id="touch-attack" aria-label="Swing katana">斬<span>Katana</span></button><button type="button" id="touch-dodge" aria-label="Dodge">⇢</button></div>
+    <div class="touch-movement"><button type="button" id="left" aria-label="Walk left">←<span>Move</span></button><button type="button" id="right" aria-label="Walk right">→<span>Move</span></button></div>
+    <div class="touch-actions"><button type="button" id="touch-jump" aria-label="Jump">↑<span>Jump</span></button><button type="button" id="touch-attack" aria-label="Swing katana" aria-description="Hold to chain katana attacks">斬<span>Hold · Katana</span></button><button type="button" id="touch-dodge" aria-label="Dodge">⇢<span>Dodge</span></button></div>
     <button type="button" id="touch-explore">Explore</button>
   </div>
   <div class="toast" id="toast" role="status" hidden></div>
   <dialog id="pause-dialog" aria-labelledby="pause-title">
     <p class="kicker">A MOMENT BETWEEN THE LIGHTS</p><h2 id="pause-title">The city can wait.</h2>
-    <p>Move with A / D or arrows. Space jumps, J swings your katana, and K dodges. Tap J during a strike to chain a three-hit combo. Jump + J attacks in the air. Shift moves faster.</p>
-    <p>M opens the city map. E explores storefronts. New districts unlock recovery checkpoints; your first rest at a stop restores 25 health.</p>
+    <p class="desktop-instructions">Move with A / D or arrows. Space jumps, J swings your katana, and K dodges. Tap J during a strike to chain a three-hit combo. Jump + J attacks in the air. Shift moves faster.</p>
+    <p class="touch-instructions">Hold an arrow with your left thumb to move. Hold Katana with your right thumb to chain three cuts. Tap Jump for air attacks, or Dodge to evade a strike. Dodge uses stamina. Turn sideways for a wider view.</p>
+    <p>Use City map to travel between districts and Explore to visit nearby storefronts. New districts unlock recovery checkpoints; your first rest at a stop restores 25 health.</p>
     <div class="dialog-actions"><button class="primary" id="resume" type="button">Continue walking</button><button class="secondary" id="restart" type="button">Start a new night</button></div>
   </dialog>
   <dialog id="map-dialog" class="city-map" aria-labelledby="map-title">

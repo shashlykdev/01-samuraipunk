@@ -8,7 +8,7 @@ const output = resolve(project, 'dist');
 const manifest = JSON.parse(await readFile(resolve(project, '.openai/hosting.json'), 'utf8'));
 if (manifest.static?.directory !== 'dist') throw new Error('Expected dist static output.');
 await mkdir(output, { recursive: true });
-for (const file of ['index.html', 'styles.css', 'game.js', 'engine.js', 'world.js', 'combat.js']) {
+for (const file of ['index.html', 'styles.css', 'game.js', 'engine.js', 'world.js', 'combat.js', 'mobile.js']) {
   await copyFile(resolve(project, file), resolve(output, file));
 }
 await cp(resolve(project, 'public/assets'), resolve(output, 'assets'), { recursive: true });

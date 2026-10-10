@@ -21,7 +21,7 @@ Open http://127.0.0.1:8766. No package installation is required.
 - M: open the city map. Travel is available when nearby enemies have been cleared.
 - E: explore a nearby storefront.
 - Escape: pause or leave a storefront.
-- Touch movement, jump, katana, and dodge controls are available on narrow screens and touch devices.
+- On phones and tablets, hold an arrow to move, hold Katana to chain cuts, and tap Jump or Dodge. Movement and combat accept separate fingers at the same time. Portrait mode keeps the playfield above the buttons; landscape gives a wider city view.
 - Sound is optional and starts muted.
 
 ## Combat and recovery
@@ -33,6 +33,12 @@ There are 36 enemies, including the Dawn Gate commander. Every third defeat drop
 Discovered stops are saved in browser storage, including discoveries from earlier versions. Combat progress, health, score, and checkpoints last for the current session. Start a new night from Pause to reset the run and discoveries. Gameplay works when browser storage is unavailable. Rain, steam, and camera shake respect reduced-motion preferences.
 
 The map contains eighteen distinct backgrounds, loaded around the current district as you travel. Distant decoded backgrounds are released to limit memory use. The route indicator tracks your position across the full city.
+
+## Mobile play
+
+Open the published game link in your phone's browser and tap **Enter the city**. No download is required. Both orientations work; turn sideways for a wider view. The layout accounts for notches, the home indicator, and changing browser height. Health, map, pause, exploration, recovery, and combat are available without a keyboard. Controls release on interruption or rotation so movement and attacks cannot remain held accidentally.
+
+Mobile rendering caps canvas resolution at 1.5 device pixels per CSS pixel. Startup loads the first background before adjacent streets, and discards temporary sprite pixel buffers once their animation bounds are prepared. This reduces startup downloads, retained memory, and canvas fill work.
 
 ## Artwork
 
@@ -49,4 +55,4 @@ npm test
 npm run build
 ```
 
-The 22 automated checks cover movement, map bounds, jump/landing, combo buffering and damage, facing and reach, dodge stamina/invulnerability, armored counterattacks, death, and enemy spawns. Browser QA also covers all fifteen new district routes, keyboard fights, the commander objective, recovery, and phone controls.
+The 26 automated checks cover movement, map bounds, jump/landing, combo buffering and damage, facing and reach, dodge stamina/invulnerability, armored counterattacks, death, enemy spawns, independent held touch inputs, cancellation, and portrait/landscape playfield bounds. Browser QA also covers all fifteen new district routes, keyboard fights, the commander objective, recovery, and phone-sized portrait and landscape controls.
