@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createHero, createEnemy, requestJump, requestAttack, requestDodge, stepCombat, attackFrame, COMBOS } from '../combat.js';
-import { ENEMY_SPAWNS, WORLD, BLOCK_WIDTH, DISTRICTS } from '../world.js';
+import { createHero, createEnemy, requestJump, requestAttack, requestDodge, stepCombat, attackFrame, COMBOS, activeBoss, remainingBosses } from '../combat.js';
+import { ENEMY_SPAWNS, BOSS_ENCOUNTERS, WORLD, BLOCK_WIDTH, DISTRICTS } from '../world.js';
 const input = { axis: 0, fast: false, walkCycle: 97 };
 function tick(hero, foes, seconds = .05) { return stepCombat(hero, foes, seconds, input, WORLD.width); }
 function target(x = 560) { const foe = createEnemy('target', x); foe.cooldown = 99; foe.speed = 0; foe.attackStart = 0; return foe; }
@@ -98,7 +98,9 @@ test('all eighteen sections have fights and the commander guards the last sectio
   assert.equal(new Set(ENEMY_SPAWNS.map(foe => foe.id)).size, ENEMY_SPAWNS.length);
   assert.ok(ENEMY_SPAWNS.every(foe => foe.x > 65 && foe.x < WORLD.width - 65));
   const bosses = ENEMY_SPAWNS.filter(foe => foe.boss);
-  assert.equal(bosses.length, 1); assert.ok(bosses[0].x > BLOCK_WIDTH * (DISTRICTS.length - 1));
+  assert.deepEqual(bosses.map(foe => Math.floor(foe.x / BLOCK_WIDTH)), [2, 5, 8, 11, 14, 17]);
+  assert.equal(bosses.filter(foe => foe.finalBoss).length, 1);
+  assert.ok(bosses.at(-1).x > BLOCK_WIDTH * (DISTRICTS.length - 1));
 });
 
 test('enemies close on an ordinary walk and lunge from beyond the first katana cut', () => {
@@ -148,4 +150,92 @@ test('the commander telegraphs a second strike and then leaves a recovery openin
     if (followup && foe.mode === 'recover') { recovery = true; break; }
   }
   assert.ok(followup); assert.ok(recovery);
+});
+
+function districtBoss(profile = BOSS_ENCOUNTERS[0], x = 820) {
+  const foe = createEnemy('district-boss', x, profile.type, true, profile);
+  foe.cooldown = 0; return foe;
+}
+test('boss profiles survive checkpoint recreation and only the commander is final', () => {
+  for (const profile of BOSS_ENCOUNTERS) {
+    const foe = districtBoss(profile), restored = createEnemy(foe.id, foe.home, foe.type, foe.boss, foe);
+    assert.equal(restored.maxHealth, profile.bossHealth);
+    assert.equal(restored.bossName, profile.bossName);
+    assert.equal(restored.bossStyle, profile.bossStyle);
+    assert.equal(restored.finalBoss, Boolean(profile.finalBoss));
+    assert.equal(restored.bossPhase, 1); assert.equal(restored.wave, null);
+  }
+});
+test('boss entrance announces once and only nearby living bosses enter the HUD', () => {
+  const hero = createHero(500), foe = districtBoss(), far = districtBoss(BOSS_ENCOUNTERS[1], 3000);
+  const events = tick(hero, [foe, far]);
+  assert.equal(events.filter(event => event.type === 'boss-enter').length, 1);
+  assert.equal(tick(hero, [foe, far]).filter(event => event.type === 'boss-enter').length, 0);
+  assert.equal(activeBoss(hero, [far, foe]), foe); assert.equal(remainingBosses([foe, far]), 2);
+  foe.health = 0;
+  assert.equal(activeBoss(hero, [far, foe]), null); assert.equal(remainingBosses([foe, far]), 1);
+});
+test('ground shockwaves give a full warning and hit a grounded hero', () => {
+  const hero = createHero(500), foe = districtBoss(); foe.specialCooldown = 0;
+  tick(hero, [foe]); assert.equal(foe.mode, 'slam');
+  for (let i = 0; i < 16; i++) tick(hero, [foe]);
+  assert.equal(foe.wave, null); assert.equal(hero.health, 100);
+  for (let i = 0; i < 30 && hero.health === 100; i++) tick(hero, [foe]);
+  assert.equal(hero.health, 84);
+});
+test('jumping or dodging through a ground wave avoids its damage', () => {
+  for (const defense of ['jump', 'dodge']) {
+    const hero = createHero(500), foe = districtBoss(); foe.specialCooldown = 0;
+    let defended = false, emitted = false;
+    for (let i = 0; i < 90; i++) {
+      if (foe.wave) {
+        emitted = true;
+        if (!defended && foe.wave.x - hero.x < (defense === 'jump' ? 160 : 85)) {
+          defended = defense === 'jump' ? requestJump(hero) : requestDodge(hero, 1);
+        }
+        if (foe.wave.x < hero.x - 50) break;
+      }
+      tick(hero, [foe]);
+    }
+    assert.ok(emitted && defended); assert.equal(hero.health, 100, defense);
+  }
+});
+test('phase II announces once and adds a third separately warned commander cut', () => {
+  const hero = createHero(500), foe = districtBoss(BOSS_ENCOUNTERS.at(-1), 640);
+  foe.health = foe.maxHealth * .49; hero.invulnerable = 10;
+  let changes = 0, thirdCut = false, recovered = false;
+  for (let i = 0; i < 100; i++) {
+    changes += tick(hero, [foe]).filter(event => event.type === 'boss-phase').length;
+    if (foe.mode === 'windup' && foe.comboIndex === 2) { thirdCut = true; assert.ok(foe.attackWindup >= .4); }
+    if (thirdCut && foe.mode === 'recover') { recovered = true; break; }
+  }
+  assert.equal(changes, 1); assert.ok(thirdCut && recovered);
+});
+test('a defeated district boss emits its identity, clears waves and remains distinct from the final boss', () => {
+  const hero = createHero(500), foe = districtBoss(BOSS_ENCOUNTERS[0], 560);
+  foe.health = 10; foe.cooldown = 99; foe.wave = { x: 1000, direction: -1, life: 2, hit: false };
+  requestAttack(hero);
+  const events = [];
+  for (let i = 0; i < 10; i++) events.push(...tick(hero, [foe]));
+  const kill = events.find(event => event.type === 'kill');
+  assert.ok(kill.boss); assert.equal(kill.finalBoss, false); assert.equal(kill.bossName, 'CANAL WARDEN');
+  assert.equal(foe.wave, null); assert.equal(remainingBosses([foe]), 0);
+});
+test('duelists add a fourth warned cut in phase II and each strike emits one sound cue', () => {
+  const hero = createHero(500), foe = districtBoss(BOSS_ENCOUNTERS[1], 640);
+  foe.health = foe.maxHealth * .49; hero.invulnerable = 10;
+  let fourth = false, sounds = 0;
+  for (let i = 0; i < 120; i++) {
+    sounds += tick(hero, [foe]).filter(event => event.type === 'enemy-swing').length;
+    if (foe.mode === 'windup' && foe.comboIndex === 3) fourth = true;
+    if (fourth && foe.mode === 'recover') break;
+  }
+  assert.ok(fourth); assert.equal(sounds, 4);
+});
+test('a boss kill restores vitality and stamina before another enemy can attack', () => {
+  const hero = createHero(500), foe = districtBoss(BOSS_ENCOUNTERS[0], 560);
+  hero.health = 35; hero.stamina = 5; foe.health = 10; foe.cooldown = 99;
+  requestAttack(hero);
+  for (let i = 0; i < 10; i++) tick(hero, [foe]);
+  assert.equal(hero.health, 75); assert.equal(hero.stamina, 100);
 });

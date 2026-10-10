@@ -1,8 +1,10 @@
 import { clamp, movementAxis, safeDelta, cameraTarget, districtIndex, advanceWalk, npcLane, wrapPedestrian, closestStop, restoreVisits } from './engine.js';
-import { BLOCK_WIDTH, DISTRICTS, WORLD, START_X, NPC_ATLASES, HERO_WALK, STOPS as stops } from './world.js';
+import { BLOCK_WIDTH, DISTRICTS, WORLD, START_X, NPC_ATLASES, HERO_WALK, BOSS_ENCOUNTERS, STOPS as stops } from './world.js';
 import { HERO_ACTIONS, ENEMY_ATLAS, ENEMY_SPAWNS } from './world.js';
-import { COMBOS, createHero, createEnemy, requestJump, requestAttack, requestDodge, attackFrame, stepCombat } from './combat.js';
+import { COMBOS, createHero, createEnemy, requestJump, requestAttack, requestDodge, attackFrame, stepCombat, activeBoss, remainingBosses } from './combat.js';
 import { createTouchInput, gameViewport } from './mobile.js';
+import { Soundtrack } from './music.js';
+import { CombatSounds } from './sound-effects.js';
 
 const $ = id => document.getElementById(id);
 const canvas = $('scene');
@@ -148,7 +150,7 @@ async function loadCity() {
       return [character.id, sprite];
     }));
     enemies = ENEMY_SPAWNS.map(spec => {
-      const foe = createEnemy(spec.id, spec.x, spec.type, spec.boss);
+      const foe = createEnemy(spec.id, spec.x, spec.type, spec.boss, spec);
       const sprite = art.enemies[foe.type];
       foe.cycleDistance = sprite.cycleDistance * sprite.height / sprite.sourceHeight;
       return foe;
@@ -244,11 +246,25 @@ function drawEnemy(foe) {
   const sprite = art.enemies[foe.type];
   let phase = sprite.clips.guard[0];
   if (foe.mode === 'walk' || foe.mode === 'recover') phase = sprite.clips.walk[Math.floor(foe.phase) % 4];
-  if (foe.mode === 'windup') phase = sprite.clips.windup[0];
+  if (foe.mode === 'windup' || foe.mode === 'slam') phase = sprite.clips.windup[0];
   if (foe.mode === 'strike') phase = sprite.clips.strike[0];
   if (foe.stun > 0 || foe.health <= 0) phase = sprite.clips.hurt[0];
   const height = sprite.height * (foe.boss ? 1.12 : 1);
   shadow(foe.x, WORLD.ground, 31, .24);
+  if (foe.wave) {
+    const wave = foe.wave;
+    ctx.strokeStyle = '#ffc479'; ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.ellipse(wave.x, WORLD.ground - 13, 23, 17, 0, 0, Math.PI * 2); ctx.stroke();
+    ctx.strokeStyle = '#fff0bc'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(wave.x - wave.direction * 43, WORLD.ground - 4); ctx.lineTo(wave.x, WORLD.ground - 29); ctx.stroke();
+  }
+  if (foe.mode === 'slam') {
+    const charge = clamp(foe.timer / .85, 0, 1);
+    ctx.strokeStyle = `rgba(255,196,121,${.35 + charge * .6})`; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(foe.x, WORLD.ground + 8); ctx.lineTo(foe.x + foe.direction * 590, WORLD.ground + 8); ctx.stroke();
+    ctx.fillStyle = '#ffd99a'; ctx.font = 'bold 14px monospace'; ctx.textAlign = 'center';
+    ctx.fillText('JUMP / DODGE', foe.x, WORLD.ground - 315);
+  }
   if (foe.mode === 'windup') {
     const charge = clamp(foe.timer / foe.attackWindup, 0, 1);
     ctx.strokeStyle = `rgba(255,105,103,${.4 + charge * .55})`; ctx.lineWidth = 2;
@@ -259,6 +275,7 @@ function drawEnemy(foe) {
   ctx.save();
   if (foe.health <= 0) ctx.globalAlpha = foe.deathTime / .45;
   if (foe.flash > .02) ctx.filter = 'brightness(1.65)';
+  else if (foe.boss) ctx.filter = `drop-shadow(0 0 ${foe.bossPhase === 2 ? 10 : 5}px ${foe.bossPhase === 2 ? '#ff6b71' : '#ffd08b'})`;
   footShadows(sprite, phase, foe.x, WORLD.ground, height, foe.direction);
   drawSprite(sprite, phase, foe.x, WORLD.ground, height, foe.direction);
   ctx.restore();
@@ -272,7 +289,7 @@ function drawEnemy(foe) {
     ctx.fillStyle = '#080b14cc'; ctx.fillRect(foe.x - width / 2, y, width, 5);
     ctx.fillStyle = foe.boss ? '#f1c683' : '#df687b'; ctx.fillRect(foe.x - width / 2, y, width * foe.health / foe.maxHealth, 5);
     ctx.font = '8px monospace'; ctx.textAlign = 'center'; ctx.fillStyle = '#f0d9cb';
-    ctx.fillText(foe.boss ? 'GATE COMMANDER' : foe.type.toUpperCase(), foe.x, y - 7);
+    ctx.fillText(foe.boss ? foe.bossName : foe.type.toUpperCase(), foe.x, y - 7);
   }
 }
 function drawHero() {
@@ -329,6 +346,11 @@ function drawCombatEffects() {
 }
 function combatEvents(events) {
   for (const event of events) {
+    if (event.type === 'boss-enter') { showToast(`${event.finalBoss ? 'FINAL BOSS' : 'DISTRICT BOSS'} · ${event.bossName}`); if (!state.muted) audio?.effect('boss-enter'); }
+    if (event.type === 'boss-phase') { showToast(`${event.bossName} · Phase II. Watch for longer combos.`); if (!state.muted) audio?.effect('boss-enter', .7); }
+    if (event.type === 'boss-slam') { state.shake = .16; if (!state.muted) audio?.effect('boss-slam'); }
+    if (event.type === 'enemy-swing' && !state.muted && Math.abs(event.x - player.x) < 650) audio?.effect('katana-return', event.boss ? .8 : .5);
+    if (['jump', 'dodge', 'land'].includes(event.type) && !state.muted) audio?.effect(event.type === 'jump' ? 'dodge' : event.type, event.type === 'jump' ? .35 : .6);
     if (event.type === 'hit' || event.type === 'hurt') {
       const y = WORLD.ground - event.y;
       const color = event.type === 'hurt' ? '#f598a4' : event.finisher ? '#ffd291' : '#b2f5f7';
@@ -338,16 +360,23 @@ function combatEvents(events) {
         effects.push({ x: event.x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, life: .25, maxLife: .25, color });
       }
       state.hitstop = event.finisher ? .075 : .045; state.shake = event.type === 'hurt' ? .2 : .12;
-      if (!state.muted) audio?.effect(event.type === 'hurt' ? 'hurt' : 'hit');
+      if (!state.muted) audio?.effect(event.type === 'hurt' ? 'hurt' : event.finisher ? 'heavy-impact' : event.armored ? 'armor-hit' : 'blade-hit');
     }
-    if (event.type === 'swing' && !state.muted) audio?.effect('swing');
+    if (event.type === 'swing' && !state.muted) audio?.effect(['katana-draw', 'katana-return', 'katana-finisher'][event.stage], .7);
     if (event.type === 'kill') {
+      if (!state.muted) audio?.effect(event.boss ? 'boss-defeat' : 'enemy-fall', event.boss ? 1 : .7);
       if (event.drop) pickups.push({ x: event.x });
-      if (event.boss && !state.won) {
+      if (event.boss) {
+        showToast(`${event.bossName} defeated · +40 vitality · ${remainingBosses(enemies)} bosses remain.`);
+      }
+      if (event.boss && remainingBosses(enemies) === 0 && !state.won) {
         player.health = Math.max(1, player.health);
         state.won = true; state.mode = 'victory'; releaseControls();
         $('victory-stats').textContent = `${player.kills} enemies defeated · ${player.bestCombo} hit best combo · ${player.score} points`;
-        $('victory-dialog').showModal(); audio?.suspend();
+        $('victory-dialog').showModal();
+        // Let the victory chime finish; do not resume audio if the player muted or left.
+        const victoryAudio = audio;
+        setTimeout(() => { if (state.mode === 'victory' && audio === victoryAudio) audio?.suspend(); }, 1900);
       }
     }
     if (event.type === 'death' && state.mode !== 'victory') {
@@ -448,7 +477,8 @@ function render() {
     ctx.fillStyle = visits.has(stop.id) ? '#aecdc6' : '#f4d193';
     ctx.beginPath(); ctx.arc(stop.x, WORLD.ground - 160, 3.5, 0, Math.PI * 2); ctx.fill();
   }
-  for (const foe of enemies) if (foe.x >= state.camera - 230 && foe.x <= state.camera + view.worldWidth + 230) drawEnemy(foe);
+  for (const foe of enemies) if ((foe.x >= state.camera - 230 && foe.x <= state.camera + view.worldWidth + 230)
+    || (foe.wave && foe.wave.x >= state.camera - 50 && foe.wave.x <= state.camera + view.worldWidth + 50)) drawEnemy(foe);
   drawHero();
   drawCombatEffects();
   ctx.restore();
@@ -520,6 +550,15 @@ function updateHud() {
   canvas.dataset.bestCombo = String(player.bestCombo);
   canvas.dataset.kills = String(player.kills);
   canvas.dataset.enemyCount = String(enemies.length);
+  const boss = activeBoss(player, enemies);
+  const bossesLeft = remainingBosses(enemies);
+  canvas.dataset.bossesRemaining = String(bossesLeft);
+  canvas.dataset.activeBoss = boss?.bossName ?? '';
+  canvas.dataset.bossPhase = String(boss?.bossPhase ?? 0);
+  canvas.dataset.music = state.muted ? 'muted' : audio?.score.mood ?? 'city';
+  canvas.dataset.musicReady = String(Boolean(audio?.score.channels));
+  canvas.dataset.audioState = audio?.context.state ?? 'off';
+  canvas.dataset.sfxReady = String(Boolean(audio?.sfx.buffers));
   canvas.dataset.sectionCount = String(DISTRICTS.length);
   canvas.dataset.touchMode = String(touchMedia.matches);
   canvas.dataset.viewWorldWidth = view.worldWidth.toFixed(1);
@@ -537,7 +576,17 @@ function updateHud() {
   $('combo').hidden = player.hitChain < 2 && !player.attack;
   $('combo-count').textContent = player.hitChain >= 2 ? `${player.hitChain} HITS` : '';
   $('combo-name').textContent = player.attack ? `${player.attack.stage + 1} / 3 · ${COMBOS[player.attack.stage].name}` : 'KEEP THE RHYTHM';
-  if (state.won) { $('objective').firstChild.textContent = 'DAWN GATE CLEARED'; $('objective').querySelector('span').textContent = 'Keep exploring the city.'; }
+  $('boss-hud').hidden = !boss || state.mode === 'welcome';
+  $('game').classList.toggle('boss-active', Boolean(boss));
+  if (boss) {
+    $('boss-name').textContent = boss.bossName;
+    $('boss-phase').textContent = `${boss.finalBoss ? 'FINAL BOSS' : 'DISTRICT BOSS'} · PHASE ${boss.bossPhase === 2 ? 'II' : 'I'}`;
+    $('boss-health').max = boss.maxHealth; $('boss-health').value = boss.health;
+    $('boss-health').setAttribute('aria-label', `${boss.bossName} health`);
+  }
+  $('objective').firstChild.textContent = state.won ? 'DAWN GATE CLEARED' : `${BOSS_ENCOUNTERS.length - bossesLeft} / ${BOSS_ENCOUNTERS.length} BOSSES DEFEATED`;
+  $('objective').querySelector('span').textContent = state.won ? 'Keep exploring the city.' : 'Defeat the six district bosses.';
+  audio?.score.setMood(boss?.engaged ? 'boss' : 'city');
   const available = state.mode === 'playing' && state.nearest;
   $('game').classList.toggle('can-explore', Boolean(available));
   $('interact').hidden = !available;
@@ -589,7 +638,7 @@ function resumeWalk() {
 function restartWalk() {
   visits.clear(); saveVisits(); Object.assign(player, createHero(START_X));
   enemies = ENEMY_SPAWNS.map(spec => {
-    const foe = createEnemy(spec.id, spec.x, spec.type, spec.boss), sprite = art.enemies[spec.type];
+    const foe = createEnemy(spec.id, spec.x, spec.type, spec.boss, spec), sprite = art.enemies[spec.type];
     foe.cycleDistance = sprite.cycleDistance * sprite.height / sprite.sourceHeight; return foe;
   });
   effects = []; pickups = []; checkpoints.clear(); checkpoints.add(0); restedStops.clear();
@@ -628,7 +677,9 @@ function openMap() {
   $('map-status').textContent = blocked ? 'Enemies are close. Clear the street before traveling.' : 'Travel to any of the 18 districts. New streets unlock recovery checkpoints.';
   $('map-grid').replaceChildren(...DISTRICTS.map((district, index) => {
     const button = document.createElement('button'); button.type = 'button'; button.className = `map-card${index === state.district ? ' current' : ''}`;
-    const small = document.createElement('small'); small.textContent = `${String(index + 1).padStart(2, '0')} / ${checkpoints.has(index) ? 'CHECKPOINT' : index === 17 ? 'FINAL ENCOUNTER' : 'CITY SECTION'}`;
+    const encounter = BOSS_ENCOUNTERS.find(boss => boss.district === index);
+    const cleared = encounter && !enemies.some(foe => foe.boss && foe.health > 0 && foe.id === `${district.id}-enforcer`);
+    const small = document.createElement('small'); small.textContent = `${String(index + 1).padStart(2, '0')} / ${encounter ? cleared ? 'BOSS CLEARED' : encounter.bossName : checkpoints.has(index) ? 'CHECKPOINT' : 'CITY SECTION'}`;
     button.append(small, document.createTextNode(district.name)); button.disabled = blocked;
     button.addEventListener('click', () => travelTo(index)); return button;
   }));
@@ -658,7 +709,7 @@ function retryCheckpoint() {
   player.y = 0; player.vy = 0; player.hurt = 0; player.blink = 0; player.attack = null; player.dodge = 0; player.invulnerable = 2;
   player.pendingEvents = []; player.hitChain = 0; player.comboGrace = 0;
   for (const foe of enemies) if (foe.health > 0 && Math.abs(foe.home - state.checkpoint) < BLOCK_WIDTH) {
-    Object.assign(foe, createEnemy(foe.id, foe.home, foe.type, foe.boss), { cycleDistance: foe.cycleDistance, cooldown: 1 });
+    Object.assign(foe, createEnemy(foe.id, foe.home, foe.type, foe.boss, foe), { cycleDistance: foe.cycleDistance, cooldown: 1 });
   }
   state.hitstop = 0; state.mode = 'playing'; state.camera = cameraTarget(player.x, view.worldWidth, WORLD.width); lastFrame = performance.now();
   if (!state.muted) audio?.resume(); canvas.focus(); updateHud();
@@ -673,11 +724,16 @@ class CityAudio {
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     if (!AudioContext) throw new Error('Audio is not supported in this browser.');
     this.context = new AudioContext();
-    const master = this.context.createGain(); master.gain.value = .21; master.connect(this.context.destination);
+    const mix = this.context.createDynamicsCompressor();
+    mix.threshold.value = -6; mix.knee.value = 8; mix.ratio.value = 3; mix.attack.value = .003; mix.release.value = .18;
+    mix.connect(this.context.destination);
+    this.score = new Soundtrack(this.context, mix);
+    this.sfx = new CombatSounds(this.context, mix);
+    const master = this.context.createGain(); master.gain.value = .21; master.connect(mix);
     this.master = master;
     const buffer = this.context.createBuffer(1, this.context.sampleRate * 3, this.context.sampleRate);
     const data = buffer.getChannelData(0);
-    for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * .6;
+    for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * .1;
     const noise = this.context.createBufferSource(); noise.buffer = buffer; noise.loop = true;
     const highpass = this.context.createBiquadFilter(); highpass.type = 'highpass'; highpass.frequency.value = 900;
     const lowpass = this.context.createBiquadFilter(); lowpass.type = 'lowpass'; lowpass.frequency.value = 7000;
@@ -687,21 +743,14 @@ class CityAudio {
     const train = this.context.createOscillator(); train.type = 'sine'; train.frequency.value = 112;
     this.trainGain = this.context.createGain(); this.trainGain.gain.value = 0; train.connect(this.trainGain); this.trainGain.connect(master); train.start();
   }
-  resume() { return this.context.resume(); }
+  async resume() { await this.context.resume(); await Promise.all([this.score.start(), this.sfx.load()]); }
   suspend() { return this.context.suspend(); }
   setTrain(clock) {
     const cycle = ((clock * 145 + 1300) % (BLOCK_WIDTH + 2000));
     const presence = Math.max(0, 1 - Math.abs(cycle - 2100) / 900);
     this.trainGain.gain.setTargetAtTime(presence * .09, this.context.currentTime, .2);
   }
-  effect(kind) {
-    const now = this.context.currentTime, tone = this.context.createOscillator(), gain = this.context.createGain();
-    tone.type = kind === 'swing' ? 'triangle' : 'square';
-    tone.frequency.setValueAtTime(kind === 'swing' ? 650 : kind === 'hurt' ? 110 : 190, now);
-    tone.frequency.exponentialRampToValueAtTime(kind === 'swing' ? 130 : 45, now + .12);
-    gain.gain.setValueAtTime(kind === 'swing' ? .13 : .22, now); gain.gain.exponentialRampToValueAtTime(.001, now + .15);
-    tone.connect(gain); gain.connect(this.master); tone.start(now); tone.stop(now + .16);
-  }
+  effect(kind, volume = 1) { this.sfx.play(kind, volume); }
 }
 
 $('start').addEventListener('click', startWalk);
@@ -722,13 +771,17 @@ $('map-dialog').addEventListener('cancel', event => { event.preventDefault(); cl
 $('death-dialog').addEventListener('cancel', event => event.preventDefault());
 $('victory-dialog').addEventListener('cancel', event => { event.preventDefault(); continueCity(); });
 $('sound').addEventListener('click', async () => {
+  $('sound').disabled = true;
   try {
     if (!audio) audio = new CityAudio();
     if (state.muted) { await audio.resume(); state.muted = false; }
     else { await audio.suspend(); state.muted = true; }
     $('sound').textContent = state.muted ? 'Sound off' : 'Sound on';
     $('sound').setAttribute('aria-pressed', String(!state.muted));
-  } catch { showToast('Audio is unavailable here. You can still explore the city.'); }
+  } catch {
+    state.muted = true; await audio?.suspend();
+    showToast('The soundtrack could not load. Tap Sound off to try again.');
+  } finally { $('sound').disabled = false; }
 });
 $('fullscreen').addEventListener('click', async () => {
   try {

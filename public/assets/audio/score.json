@@ -1,0 +1,24 @@
+{
+  "title": "Neon Ronin original score",
+  "method": "Original procedural synthesis; no external samples or recordings.",
+  "style": "Dark cyberpunk synthwave with taiko-like percussion, pentatonic plucked strings, analog bass and detuned pads.",
+  "sample_rate": 44100,
+  "tracks": [
+    {
+      "file": "rainline-after-hours.mp3",
+      "bpm": 96,
+      "bars": 16,
+      "loop_seconds": 40.0,
+      "peak_dbfs": -2.65,
+      "rms_dbfs": -17.08
+    },
+    {
+      "file": "six-gates-of-steel.mp3",
+      "bpm": 120,
+      "bars": 16,
+      "loop_seconds": 32.0,
+      "peak_dbfs": -2.97,
+      "rms_dbfs": -17.08
+    }
+  ]
+}

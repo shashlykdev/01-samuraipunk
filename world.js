@@ -25,9 +25,18 @@ export const NPC_ATLASES = ['npc-everyday-walk-v3', 'npc-workers-walk-v2', 'npc-
 export const HERO_WALK = 'samurai-walk-v3-grounded';
 export const HERO_ACTIONS = 'samurai-actions-v1';
 export const ENEMY_ATLAS = 'cyber-raiders-v1';
+export const BOSS_ENCOUNTERS = [
+  { district: 2, bossName: 'CANAL WARDEN', type: 'enforcer', bossStyle: 'sweep', bossHealth: 220 },
+  { district: 5, bossName: 'CHROME REAPER', type: 'raider', bossStyle: 'duelist', bossHealth: 240 },
+  { district: 8, bossName: 'SHRINEBREAKER', type: 'enforcer', bossStyle: 'sweep', bossHealth: 260 },
+  { district: 11, bossName: 'DYNAMO SENTINEL', type: 'enforcer', bossStyle: 'sweep', bossHealth: 280 },
+  { district: 14, bossName: 'LOTUS ASSASSIN', type: 'raider', bossStyle: 'duelist', bossHealth: 300 },
+  { district: 17, bossName: 'GATE COMMANDER', type: 'enforcer', bossStyle: 'commander', bossHealth: 360, finalBoss: true }
+];
 export const ENEMY_SPAWNS = DISTRICTS.flatMap((district, index) => [
   { id: `${district.id}-raider`, x: index === 0 ? START_X + 440 : BLOCK_WIDTH * (index + .48), type: 'raider' },
-  { id: `${district.id}-enforcer`, x: BLOCK_WIDTH * (index + .82), type: 'enforcer', boss: index === DISTRICTS.length - 1 }
+  { id: `${district.id}-enforcer`, x: BLOCK_WIDTH * (index + .82), type: 'enforcer',
+    ...BOSS_ENCOUNTERS.find(boss => boss.district === index), boss: BOSS_ENCOUNTERS.some(boss => boss.district === index) }
 ]);
 export const STOPS = [
   { id: 'lanterns', x: BLOCK_WIDTH * .12, name: 'Paper Lanterns', label: '01 / A QUIET CORNER',

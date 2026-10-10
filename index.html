@@ -15,7 +15,7 @@
   <header class="hud" id="hud" hidden>
     <div class="wordmark">NEON RONIN<span id="district-name">01 / THE LANTERN DISTRICT</span></div>
     <div class="hud-actions">
-      <button id="sound" type="button" aria-pressed="false">Sound off</button>
+      <button id="sound" type="button" aria-pressed="false" title="Toggle original music and city sound">Sound off</button>
       <button id="map" type="button">City map <kbd>M</kbd></button>
       <button id="fullscreen" type="button">Fullscreen</button>
       <button id="pause" type="button" aria-label="Pause game">Pause <kbd>Esc</kbd></button>
@@ -28,12 +28,16 @@
     <div class="combat-totals"><span id="kill-count">0 DEFEATED</span><span id="score">000000</span></div>
   </section>
   <div class="objective" id="objective" hidden>REACH DAWN GATE<span>Defeat the gate commander.</span></div>
+  <section class="boss-hud" id="boss-hud" aria-label="Boss encounter" hidden>
+    <div><strong id="boss-name"></strong><span id="boss-phase"></span></div>
+    <progress id="boss-health" max="300" value="300" aria-label="Boss health"></progress>
+  </section>
   <div class="combo" id="combo" hidden><strong id="combo-count"></strong><span id="combo-name"></span></div>
   <section class="welcome" id="welcome" aria-labelledby="title">
     <div class="welcome-inner">
       <p class="kicker"><span></span> ROAD TO DAWN</p>
       <h1 id="title">NEON<br><em>RONIN</em><span class="kanji" aria-hidden="true">浪人</span></h1>
-      <p class="welcome-copy">Eighteen districts. One road to the city gate.<br>Draw your katana. Find your rhythm. Survive until dawn.</p>
+      <p class="welcome-copy">Eighteen districts. Six bosses. One road to dawn.<br>Draw your katana. Find your rhythm. Survive until dawn.</p>
       <button class="primary" id="start" type="button" disabled>Loading the city…</button>
       <p class="load-status" id="load-status" role="status">Gathering the city’s lights and faces.</p>
       <div class="welcome-controls desktop-instructions"><span><kbd>←</kbd> <kbd>→</kbd> Move</span><span><kbd>Space</kbd> Jump</span><span><kbd>J</kbd> Katana / combo</span><span><kbd>K</kbd> Dodge</span></div>
@@ -58,6 +62,7 @@
     <p class="desktop-instructions">Move with A / D or arrows. Space jumps, J swings your katana, and K dodges. Tap J during a strike to chain a three-hit combo. Jump + J attacks in the air. Shift moves faster.</p>
     <p class="touch-instructions">Hold an arrow with your left thumb to move. Hold Katana with your right thumb to chain three cuts. Tap Jump for air attacks, or Dodge to evade a strike. Dodge uses stamina. Turn sideways for a wider view.</p>
     <p>Use City map to travel between districts and Explore to visit nearby storefronts. New districts unlock recovery checkpoints; your first rest at a stop restores 25 health.</p>
+    <p>A boss guards every third district. At half health, expect an extra cut. Jump or dodge the golden ground wave. Defeating a boss restores 40 health and all stamina. Turn Sound on for the original city and boss themes.</p>
     <div class="dialog-actions"><button class="primary" id="resume" type="button">Continue walking</button><button class="secondary" id="restart" type="button">Start a new night</button></div>
   </dialog>
   <dialog id="map-dialog" class="city-map" aria-labelledby="map-title">
@@ -72,7 +77,7 @@
   </dialog>
   <dialog id="victory-dialog" aria-labelledby="victory-title">
     <p class="kicker">THE GATE IS OPEN</p><h2 id="victory-title">Dawn breaks.</h2>
-    <p>You defeated the gate commander. The city is yours to explore.</p><p id="victory-stats"></p>
+    <p>All six district bosses are defeated. The city is yours to explore.</p><p id="victory-stats"></p>
     <button class="primary" id="continue-city" type="button">Keep exploring</button>
   </dialog>
   <dialog id="stop-dialog" aria-labelledby="stop-title">

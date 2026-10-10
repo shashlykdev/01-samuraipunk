@@ -1,0 +1,58 @@
+{
+  "method": "Original procedural synthesis; no external samples or recordings.",
+  "sample_rate": 44100,
+  "effects": [
+    {
+      "file": "katana-draw.mp3",
+      "seconds": 0.2
+    },
+    {
+      "file": "katana-return.mp3",
+      "seconds": 0.18
+    },
+    {
+      "file": "katana-finisher.mp3",
+      "seconds": 0.26
+    },
+    {
+      "file": "blade-hit.mp3",
+      "seconds": 0.26
+    },
+    {
+      "file": "armor-hit.mp3",
+      "seconds": 0.42
+    },
+    {
+      "file": "heavy-impact.mp3",
+      "seconds": 0.48
+    },
+    {
+      "file": "hurt.mp3",
+      "seconds": 0.38
+    },
+    {
+      "file": "dodge.mp3",
+      "seconds": 0.28
+    },
+    {
+      "file": "land.mp3",
+      "seconds": 0.22
+    },
+    {
+      "file": "enemy-fall.mp3",
+      "seconds": 0.42
+    },
+    {
+      "file": "boss-enter.mp3",
+      "seconds": 1.15
+    },
+    {
+      "file": "boss-slam.mp3",
+      "seconds": 0.65
+    },
+    {
+      "file": "boss-defeat.mp3",
+      "seconds": 1.6
+    }
+  ]
+}

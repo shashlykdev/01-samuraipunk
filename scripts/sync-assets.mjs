@@ -2,9 +2,12 @@ import { copyFile, mkdir } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DISTRICTS, NPC_ATLASES, HERO_WALK, HERO_ACTIONS, ENEMY_ATLAS } from '../world.js';
+import { EFFECT_NAMES } from '../sound-effects.js';
 
 const project = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const files = [
+  'audio/rainline-after-hours.mp3', 'audio/six-gates-of-steel.mp3', 'audio/score.json', 'audio/sfx/effects.json',
+  ...EFFECT_NAMES.map(name => `audio/sfx/${name}.mp3`),
   ...DISTRICTS.flatMap(district => [`environments/${district.image}`, `environments/${district.image.replace('.png', '.prompt.txt')}`]),
   'environments/cyberpunk-rooftop-v1.initial.prompt.txt', 'environments/cyberpunk-dawn-gate-v1.initial.prompt.txt',
   'characters/samurai/samurai-idle-v2-ivory.png',

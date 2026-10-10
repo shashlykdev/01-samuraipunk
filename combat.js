@@ -14,8 +14,8 @@ export function createHero(x) {
     invulnerable: 0, blink: 0, hurt: 0, landing: 0, hitChain: 0, chainTime: 0, bestCombo: 0,
     kills: 0, score: 0, pendingEvents: [] };
 }
-export function createEnemy(id, x, type = 'raider', boss = false) {
-  const maxHealth = boss ? 300 : type === 'enforcer' ? 112 : 70;
+export function createEnemy(id, x, type = 'raider', boss = false, options = {}) {
+  const maxHealth = boss ? (options.bossHealth ?? 300) : type === 'enforcer' ? 112 : 70;
   const windup = boss ? .5 : type === 'enforcer' ? .58 : .46;
   return { id, x, home: x, type, boss, health: maxHealth, maxHealth, direction: -1, phase: 0,
     mode: 'idle', timer: 0, cooldown: .7, stun: 0, flash: 0, deathTime: 0, attackLanded: false,
@@ -24,7 +24,21 @@ export function createEnemy(id, x, type = 'raider', boss = false) {
     attackStart: boss ? 210 : type === 'enforcer' ? 190 : 176,
     lungeDistance: boss ? 100 : type === 'enforcer' ? 82 : 76, lungeRemaining: 0,
     lungeSpeed: boss ? 400 : type === 'enforcer' ? 340 : 370, reach: boss ? 128 : 108,
-    damage: boss ? 22 : type === 'enforcer' ? 15 : 10 };
+    damage: boss ? 18 : type === 'enforcer' ? 15 : 10,
+    bossName: options.bossName ?? 'GATE COMMANDER', finalBoss: Boolean(options.finalBoss),
+    bossStyle: options.bossStyle ?? 'commander', bossHealth: maxHealth, bossPhase: 1, engaged: false,
+    wave: null, specialCooldown: 3 };
+}
+
+export function activeBoss(hero, enemies, radius = 820) {
+  return enemies.filter(foe => foe.boss && foe.health > 0 && Math.abs(foe.x - hero.x) < radius)
+    .sort((a, b) => Math.abs(a.x - hero.x) - Math.abs(b.x - hero.x))[0] ?? null;
+}
+export function remainingBosses(enemies) { return enemies.filter(foe => foe.boss && foe.health > 0).length; }
+
+function startShockwave(foe, hero) {
+  foe.direction = hero.x >= foe.x ? 1 : -1;
+  foe.mode = 'slam'; foe.timer = 0; foe.wave = null;
 }
 
 function startEnemyAttack(foe, hero, followup = false) {
@@ -122,10 +136,12 @@ export function stepCombat(hero, enemies, seconds, input, worldWidth) {
         foe.x = clamp(foe.x + hero.direction * move.push * (armored ? .2 : 1), 65, worldWidth - 65);
         hero.hitChain++; hero.chainTime = 2.4; hero.bestCombo = Math.max(hero.bestCombo, hero.hitChain);
         hero.score += damage * Math.min(hero.hitChain, 10);
-        events.push({ type: 'hit', x: foe.x, y: 125, damage, finisher: attack.stage === 2, enemyId: foe.id });
+        events.push({ type: 'hit', x: foe.x, y: 125, damage, finisher: attack.stage === 2, armored: foe.type === 'enforcer', enemyId: foe.id });
         if (!foe.health) {
           foe.mode = 'dead'; foe.deathTime = .45; hero.kills++; hero.score += foe.boss ? 1000 : 100;
-          events.push({ type: 'kill', x: foe.x, enemyId: foe.id, boss: foe.boss, drop: hero.kills % 3 === 0 });
+          if (foe.boss) { hero.health = Math.min(hero.maxHealth, hero.health + 40); hero.stamina = 100; }
+          events.push({ type: 'kill', x: foe.x, enemyId: foe.id, boss: foe.boss,
+            finalBoss: foe.finalBoss, bossName: foe.bossName, drop: hero.kills % 3 === 0 });
         }
       }
     }
@@ -137,12 +153,38 @@ export function stepCombat(hero, enemies, seconds, input, worldWidth) {
   for (const foe of enemies) {
     foe.flash = Math.max(0, foe.flash - dt);
     foe.resolve = Math.max(0, foe.resolve - dt);
-    if (foe.health <= 0) { foe.deathTime = Math.max(0, foe.deathTime - dt); continue; }
+    if (foe.health <= 0) { foe.wave = null; foe.deathTime = Math.max(0, foe.deathTime - dt); continue; }
+    if (foe.boss && foe.health <= foe.maxHealth / 2 && foe.bossPhase === 1) {
+      foe.bossPhase = 2; foe.speed += 14;
+      events.push({ type: 'boss-phase', bossName: foe.bossName, enemyId: foe.id });
+    }
+    // The wave persists independently of its caster's next animation, but dies with the boss.
+    if (foe.wave) {
+      const wave = foe.wave, oldX = wave.x;
+      wave.x += wave.direction * 310 * dt; wave.life -= dt;
+      if (!wave.hit && hero.health > 0 && hero.y <= 65 && Math.abs(hero.x - (oldX + wave.x) / 2) <= 34 + Math.abs(wave.x - oldX) / 2) {
+        wave.hit = true; hurtHero(hero, { ...foe, direction: wave.direction, damage: 16 }, events);
+      }
+      if (wave.life <= 0) foe.wave = null;
+    }
+    foe.specialCooldown = Math.max(0, foe.specialCooldown - dt);
     foe.cooldown = Math.max(0, foe.cooldown - dt);
     if (foe.stun > 0) { foe.stun = Math.max(0, foe.stun - dt); continue; }
     const distance = Math.abs(hero.x - foe.x);
+    if (foe.boss && !foe.engaged && distance < 650 && hero.health > 0) {
+      foe.engaged = true;
+      events.push({ type: 'boss-enter', bossName: foe.bossName, enemyId: foe.id, finalBoss: foe.finalBoss });
+    }
     if (hero.health <= 0 || distance > 820) { foe.mode = 'idle'; foe.comboIndex = 0; continue; }
-    if (foe.mode === 'windup' || foe.mode === 'strike') {
+    if (foe.mode === 'slam') {
+      foe.timer += dt;
+      if (foe.timer >= .85) {
+        foe.wave = { x: foe.x, direction: foe.direction, life: 1.9, hit: false };
+        foe.specialCooldown = foe.bossPhase === 2 ? 3.8 : 5;
+        foe.mode = 'recover'; foe.timer = 0; foe.cooldown = 1.05;
+        events.push({ type: 'boss-slam', x: foe.x, enemyId: foe.id });
+      }
+    } else if (foe.mode === 'windup' || foe.mode === 'strike') {
       foe.timer += dt;
       const windup = foe.attackWindup;
       // Aim early, then commit: a dodge through the last part of the tell makes the attack miss.
@@ -152,6 +194,7 @@ export function stepCombat(hero, enemies, seconds, input, worldWidth) {
         foe.x = clamp(foe.x + foe.direction * moved, 65, worldWidth - 65);
       }
       if (foe.timer >= windup) {
+        if (foe.mode !== 'strike') events.push({ type: 'enemy-swing', x: foe.x, boss: foe.boss });
         foe.mode = 'strike';
         const strikeTime = foe.timer - windup;
         if (strikeTime <= .22) {
@@ -166,8 +209,9 @@ export function stepCombat(hero, enemies, seconds, input, worldWidth) {
         }
       }
       if (foe.timer >= windup + .3) {
-        if (foe.boss && foe.comboIndex === 0 && Math.abs(hero.x - foe.x) < 290 && hero.health > 0) {
-          foe.comboIndex = 1; startEnemyAttack(foe, hero, true);
+        const cuts = foe.bossStyle === 'duelist' ? (foe.bossPhase === 2 ? 4 : 3) : (foe.bossPhase === 2 ? 3 : 2);
+        if (foe.boss && foe.comboIndex < cuts - 1 && Math.abs(hero.x - foe.x) < 290 && hero.health > 0) {
+          foe.comboIndex++; startEnemyAttack(foe, hero, true);
         } else { foe.mode = 'recover'; foe.timer = 0; foe.cooldown = foe.boss ? .85 : .7; }
       }
     } else if (foe.mode === 'recover') {
@@ -182,8 +226,10 @@ export function stepCombat(hero, enemies, seconds, input, worldWidth) {
       if (foe.timer >= .36) foe.mode = 'idle';
     } else {
       foe.direction = hero.x >= foe.x ? 1 : -1;
-      const allyAttacking = enemies.some(other => other !== foe && other.health > 0 && ['windup', 'strike'].includes(other.mode) && Math.abs(other.x - hero.x) < 420);
-      if (distance <= foe.attackStart && foe.cooldown <= 0 && !allyAttacking) {
+      const allyAttacking = enemies.some(other => other !== foe && other.health > 0 && ['windup', 'strike', 'slam'].includes(other.mode) && Math.abs(other.x - hero.x) < 420);
+      if (foe.boss && foe.bossStyle !== 'duelist' && distance < 430 && foe.specialCooldown <= 0 && foe.cooldown <= 0 && !allyAttacking) {
+        startShockwave(foe, hero);
+      } else if (distance <= foe.attackStart && foe.cooldown <= 0 && !allyAttacking) {
         startEnemyAttack(foe, hero);
       } else {
         const standOff = allyAttacking ? foe.attackStart + 45 : foe.reach - 18;

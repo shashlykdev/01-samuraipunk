@@ -1,5 +1,9 @@
 # Road to Dawn asset set
 
+## Original audio
+
+`public/assets/audio/rainline-after-hours.mp3` (40 seconds, 96 BPM) and `six-gates-of-steel.mp3` (32 seconds, 120 BPM) are original exploration and boss themes. `score.json` records the synthesis method, musical brief, duration, tempo, and measured levels. Thirteen short combat clips and `effects.json` are under `public/assets/audio/sfx`. The katana swishes use reduced high-frequency noise and short 0.18–0.26-second envelopes; impacts use resonant metal and low body transients. Both audio sets were composed using procedural synthesis with no external recordings. The authoring scripts preserve the complete arrangements and sound designs.
+
 All new PNG artwork was created with the built-in image-generation tool. Selected runtime artwork and exact prompts are saved together below; the editable originals are also retained in `../assets`. Sprite metadata records source rectangles, ground anchors, and a shared body scale.
 
 ## Action sheets

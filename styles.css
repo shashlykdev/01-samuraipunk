@@ -29,6 +29,15 @@ progress::-moz-progress-bar { background: #ed708b; }
 .combat-totals { display: flex; justify-content: space-between; margin-top: 10px; font: 8px/1 ui-monospace, monospace; color: #beb8bc; letter-spacing: .08em; }
 .objective { position: absolute; right: 32px; top: 85px; text-align: right; color: #f2d7aa; font: 9px/1.8 ui-monospace, monospace; letter-spacing: .1em; pointer-events: none; text-shadow: 0 2px 5px #000; }
 .objective span { display: block; color: #b9b4bf; font: 10px/1.8 -apple-system, sans-serif; letter-spacing: 0; }
+.boss-hud { position: absolute; top: 90px; left: 50%; transform: translateX(-50%); width: min(360px, 32vw); padding: 10px 14px; background: #0a0d18e8; border-top: 2px solid #edba77; pointer-events: none; }
+.boss-hud > div { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+.boss-hud strong { color: #ffe0aa; font: 11px/1.6 ui-monospace, monospace; letter-spacing: .08em; }
+.boss-hud span { color: #cbbcc2; font: 7px/1.4 ui-monospace, monospace; text-align: right; }
+.boss-hud progress { height: 6px; accent-color: #e9b771; }
+.boss-hud progress::-webkit-progress-value { background: #e9b771; }.boss-hud progress::-moz-progress-bar { background: #e9b771; }
+.touch-ui .boss-hud { top: calc(142px + env(safe-area-inset-top)); width: min(340px, calc(100% - 32px)); padding: 7px 10px; }
+.touch-ui .boss-hud strong { font-size: 10px; }
+@media (orientation: landscape) { .touch-ui .boss-hud { top: calc(66px + env(safe-area-inset-top)); width: 29%; } .touch-ui .boss-hud > div { display: block; } .touch-ui .boss-hud strong { font-size: 9px; } .touch-ui .boss-hud span { display: block; text-align: left; } }
 .combo { position: absolute; right: 40px; top: 35%; text-align: right; pointer-events: none; text-shadow: 0 2px 14px #000; }
 .combo strong { display: block; color: #f3d8a3; font: italic 700 44px/1.1 "Arial Narrow", sans-serif; }
 .combo span { display: block; margin-top: 8px; color: #e6d6d6; font: 9px/1.8 ui-monospace, monospace; letter-spacing: .18em; }
@@ -79,6 +88,9 @@ h1 em { font-style: normal; color: var(--pink); }
 .touch-instructions { display: none; }
 .welcome-touch { color: #c7bbc1; font-size: 12px; line-height: 1.8; margin: 0; }
 .toast { position: absolute; top: 95px; left: 50%; transform: translateX(-50%); background: #0b141fee; border: 1px solid #e3d8be66; padding: 12px 20px; color: var(--paper); font-size: 12px; text-align: center; max-width: 80vw; }
+.boss-active .toast { top: 166px; }
+.boss-active.touch-ui .toast { top: calc(202px + env(safe-area-inset-top)); }
+@media (orientation: landscape) { .boss-active.touch-ui .toast { top: calc(132px + env(safe-area-inset-top)); } }
 dialog { background: #101620f7; color: var(--paper); border: 1px solid #d6c9b549; border-radius: 4px; padding: 38px; width: min(480px, calc(100% - 40px)); max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 24px); overflow: auto; overscroll-behavior: contain; box-shadow: 0 20px 80px #000b; }
 dialog::backdrop { background: #030811a8; backdrop-filter: blur(4px); }
 dialog .kicker { font-size: 9px; color: #d49d8c; margin-bottom: 18px; }

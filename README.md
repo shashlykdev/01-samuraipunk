@@ -1,6 +1,6 @@
 # Neon Ronin — Road to Dawn
 
-A browser samurai action game across eighteen connected cyberpunk districts. Fifteen new illustrated streets extend the original lantern district, night market, and canal promenade. Fight raiders and armored enforcers, chain katana attacks, and defeat the commander at Dawn Gate. Sixteen civilian designs populate the sidewalks, with thirteen late-night stops to discover.
+A browser samurai action game across eighteen connected cyberpunk districts. Fight raiders, armored enforcers, and six named bosses on the road to Dawn Gate. Sixteen civilian designs populate the sidewalks, with thirteen late-night stops to discover. An original synthwave score shifts from city exploration to boss combat.
 
 ## Run locally
 
@@ -28,9 +28,19 @@ Open http://127.0.0.1:8766. No package installation is required.
 
 The samurai has 100 health. Draw Cut, Return Cut, and Storm Break form a three-stage combo, with increasing damage and reach. Consecutive hits build a hit counter and score multiplier. Enemies pursue a normal walk, start attacks from outside the first cut's reach, and lunge into range. Red warnings show their direction and reach. They aim early, then commit, so a late dodge through an attack can make it miss. Jumping also clears melee strikes.
 
-Light cuts deal damage but only briefly stagger an enemy before it gains temporary resolve and counters. Storm Break always breaks that resolve and creates a longer opening. Nearby enemies take turns committing to attacks and backstep during recovery. The gate commander follows its first strike with a separately warned second cut, then leaves a recovery opening. Damage and enemy health are unchanged by this behavior update.
+Light cuts deal damage but only briefly stagger an enemy before it gains temporary resolve and counters. Storm Break always breaks that resolve and creates a longer opening. Nearby enemies take turns committing to attacks and backstep during recovery.
 
-There are 36 enemies, including the Dawn Gate commander. Every third defeat drops a healing pickup worth 18 health. Reaching a new district unlocks a checkpoint and restores health once. Your first rest at each storefront during a run restores 25 health. On defeat, retry from the current checkpoint with full health and stamina; defeated enemies and score are retained for that run. Defeating the commander clears the objective and allows continued exploration.
+There are 36 enemies, including a boss in every third district: Canal Warden, Chrome Reaper, Shrinebreaker, Dynamo Sentinel, Lotus Assassin, and the Gate Commander. Sweep bosses and the commander send golden ground waves after an 0.85-second directional warning; jump or dodge as the wave reaches you. Duelists chain three separately warned cuts. At half health, every boss moves faster and adds one extra cut. Bosses use the existing enemy artwork at a larger scale with a gold or red aura, their own health bar, entrance cue, and map label.
+
+Every third enemy defeat drops a healing pickup worth 18 health. Each boss defeat restores 40 health and full stamina. Reaching a new district unlocks a checkpoint and restores health once. Your first rest at each storefront during a run restores 25 health. On defeat, retry from the current checkpoint with full health and stamina; defeated enemies and score are retained, and surviving nearby bosses return to their first phase. Defeat all six bosses to clear the objective, then continue exploring.
+
+## Original music and fighting sounds
+
+Tap **Sound off** to enable both music and effects. Rainline After Hours is a 40-second, 96 BPM city loop; Six Gates of Steel is a 32-second, 120 BPM boss loop. The score combines dark synthwave bass and pads with pentatonic shamisen-like plucks and taiko-like percussion. Boss proximity crossfades between the two themes. Both loop through decoded Web Audio buffers; audio downloads only after sound is enabled. Pause, maps, storefronts, app interruption, and death suspend playback.
+
+Thirteen original combat clips cover the three katana cuts, ordinary and armored impacts, a heavy finisher, taking damage, dodging, landing, enemy falls, boss entrances, shockwaves, and boss defeats. Sword swishes are short, soft movements of air; metallic impacts use brief resonant tones rather than sustained high-frequency noise. Effects sit above the music, with slight pitch variation and a limiter on simultaneous voices. The master compressor controls overlapping peaks.
+
+All music and combat audio was composed with procedural synthesis, without external samples or recordings. MP3 files and metadata live under `public/assets/audio`. The reproducible authoring scripts are `scripts/generate-music.py` and `scripts/generate-sfx.py`; regeneration requires Python with NumPy/SciPy and FFmpeg. These authoring tools are unnecessary to run or build the game.
 
 Discovered stops are saved in browser storage, including discoveries from earlier versions. Combat progress, health, score, and checkpoints last for the current session. Start a new night from Pause to reset the run and discoveries. Gameplay works when browser storage is unavailable. Rain, steam, and camera shake respect reduced-motion preferences.
 
@@ -57,4 +67,4 @@ npm test
 npm run build
 ```
 
-The 31 automated checks cover movement, map bounds, jump/landing, combo buffering and damage, facing and reach, dodge stamina/invulnerability, enemy pursuit, lunges, counters, coordinated attacks, locked strike direction, boss followups, death, enemy spawns, independent held touch inputs, cancellation, and portrait/landscape playfield bounds. Browser QA also covers all fifteen new district routes, keyboard fights, the commander objective, recovery, and phone-sized portrait and landscape controls.
+The 42 automated checks cover movement, map bounds, jump/landing, combos, facing/reach, dodge stamina/invulnerability, coordinated enemy attacks, six boss profiles, shockwave defenses, phase changes and extra cuts, boss recovery, checkpoint recreation, independent touch inputs, portrait/landscape bounds, music loading/crossfades, audio retry, and bounded sound-effect voices. Browser QA covers the city map, boss fights and health bars on phones, enabled audio, and pause/resume.
