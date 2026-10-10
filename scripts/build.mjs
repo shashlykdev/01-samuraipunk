@@ -9,7 +9,7 @@ const output = resolve(project, 'dist');
 const manifest = JSON.parse(await readFile(resolve(project, '.openai/hosting.json'), 'utf8'));
 if (manifest.static?.directory !== 'dist') throw new Error('Expected dist static output.');
 await mkdir(output, { recursive: true });
-for (const file of ['index.html', 'styles.css', 'game.js', 'engine.js', 'world.js', 'combat.js', 'mobile.js', 'music.js', 'sound-effects.js']) {
+for (const file of ['index.html', 'styles.css', 'game.js', 'engine.js', 'world.js', 'combat.js', 'mobile.js', 'music.js', 'sound-effects.js', 'city-background.js']) {
   await copyFile(resolve(project, file), resolve(output, file));
 }
 await cp(resolve(project, 'public/assets'), resolve(output, 'assets'), { recursive: true });
@@ -23,6 +23,7 @@ for (const frame of hero.frames) {
   }
 }
 await stat(resolve(output, 'assets/vehicles/elevated-train-v1.png'));
+await stat(resolve(output, 'assets/environments/city-join-column-v1.png'));
 for (const district of DISTRICTS) await stat(resolve(output, 'assets/environments', district.image));
 if (DISTRICTS.length < 18 || new Set(DISTRICTS.map(district => district.image)).size !== DISTRICTS.length) throw new Error('Eighteen distinct city backgrounds are required.');
 for (const [folder, name, count] of [['samurai', HERO_ACTIONS, 16], ['enemies', ENEMY_ATLAS, 8]]) {

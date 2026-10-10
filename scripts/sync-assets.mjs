@@ -6,6 +6,7 @@ import { EFFECT_NAMES } from '../sound-effects.js';
 
 const project = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const files = [
+  'environments/city-join-column-v1.png', 'environments/city-join-column-v1.prompt.txt',
   'audio/rainline-after-hours.mp3', 'audio/six-gates-of-steel.mp3', 'audio/score.json', 'audio/sfx/effects.json',
   ...EFFECT_NAMES.map(name => `audio/sfx/${name}.mp3`),
   ...DISTRICTS.flatMap(district => [`environments/${district.image}`, `environments/${district.image.replace('.png', '.prompt.txt')}`]),

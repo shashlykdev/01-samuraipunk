@@ -42,7 +42,7 @@ All music and combat audio was composed with procedural synthesis, without exter
 
 Discovered stops are saved in browser storage, including discoveries from earlier versions. Combat progress, health, score, and checkpoints last for the current session. Start a new night from Pause to reset the run and discoveries. Gameplay works when browser storage is unavailable. Rain, steam, and camera shake respect reduced-motion preferences.
 
-The map contains eighteen distinct backgrounds, loaded around the current district as you travel. Distant decoded backgrounds are released to limit memory use. The route indicator tracks your position across the full city.
+The map contains eighteen distinct backgrounds, loaded around the current district as you travel. Each frame has measured sidewalk and curb anchors; its facade, paving, curb face, and road are aligned separately to a common ground plane. All seventeen joins blend adjacent wet paving and use a matching utility column to connect the building edges. The alignment and joins are cached when loaded, and distant background canvases are released to limit memory use. The route indicator tracks your position across the full city.
 
 ## Mobile play
 
@@ -65,4 +65,4 @@ npm test
 npm run build
 ```
 
-The 42 automated checks cover movement, map bounds, jump/landing, combos, facing/reach, dodge stamina/invulnerability, coordinated enemy attacks, six boss profiles, shockwave defenses, phase changes and extra cuts, boss recovery, checkpoint recreation, independent touch inputs, portrait/landscape bounds, music loading/crossfades, audio retry, and bounded sound-effect voices. Browser QA covers the city map, boss fights and health bars on phones, enabled audio, and pause/resume.
+The 44 automated checks cover movement, map bounds, sidewalk/curb alignment across every frame, pedestrian grounding, jump/landing, combos, facing/reach, dodge stamina/invulnerability, coordinated enemy attacks, six boss profiles, shockwave defenses, phase changes and extra cuts, boss recovery, checkpoint recreation, independent touch inputs, portrait/landscape bounds, music loading/crossfades, audio retry, and bounded sound-effect voices. Browser QA covers all seventeen street joins, the city map, boss fights and health bars on phones, enabled audio, and pause/resume.

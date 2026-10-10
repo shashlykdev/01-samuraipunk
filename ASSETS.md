@@ -21,6 +21,10 @@ Both sheets are 1774 × 887 RGBA with transparent backgrounds. The samurai has s
 
 ## Fifteen new city backgrounds
 
+### Connected streets
+
+`public/assets/environments/city-join-column-v1.{png,prompt.txt}` is the transparent utility-column connector, generated with the built-in image tool. The 1024 × 1536 RGBA original is retained unchanged. `city-background.js` aligns every district's measured facade foot, curb top, and curb bottom to shared rows 744, 824, and 849. At all seventeen boundaries, a cached 512-pixel overlap blends the wet pavement and road, while the column conceals the meeting building edges. The source art remains unchanged; the rendering applies the alignment when a district loads. Old neighborhood canvases and joins are released as the player travels.
+
 Every selected background is 1672 × 941 RGB. For each basename below, the PNG and exact `.prompt.txt` are under `public/assets/environments/`.
 
 | District | Asset basename |

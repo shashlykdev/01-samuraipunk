@@ -5,6 +5,7 @@ import { COMBOS, createHero, createEnemy, requestJump, requestAttack, requestDod
 import { createTouchInput, gameViewport } from './mobile.js';
 import { Soundtrack } from './music.js';
 import { CombatSounds } from './sound-effects.js';
+import { CITY_ART, alignCityFrame, createCityJoin } from './city-background.js';
 
 const $ = id => document.getElementById(id);
 const canvas = $('scene');
@@ -37,6 +38,7 @@ let pickups = [];
 const checkpoints = new Set([0]);
 const restedStops = new Set();
 const districtLoads = new Map();
+const cityJoins = new Map();
 const rain = Array.from({ length: 160 }, () => ({ x: Math.random(), y: Math.random(), depth: .3 + Math.random() * .7 }));
 
 async function loadImage(path) {
@@ -55,7 +57,8 @@ function loadDistrict(index) {
   if (art.backgrounds?.[index]) return Promise.resolve(art.backgrounds[index]);
   if (!districtLoads.has(index)) {
     districtLoads.set(index, loadImage(`environments/${DISTRICTS[index].image}`).then(image => {
-      art.backgrounds[index] = image; districtLoads.delete(index); return image;
+      const aligned = alignCityFrame(image, DISTRICTS[index]);
+      art.backgrounds[index] = aligned; districtLoads.delete(index); return aligned;
     }).catch(error => { districtLoads.delete(index); throw error; }));
   }
   return districtLoads.get(index);
@@ -64,6 +67,7 @@ function prefetchDistricts(index) {
   for (const next of [index - 1, index, index + 1, index + 2]) loadDistrict(next).catch(() => {});
   // Only a small neighborhood needs decoded bitmaps on mobile.
   for (let next = 0; next < art.backgrounds.length; next++) if (Math.abs(next - index) > 3) art.backgrounds[next] = null;
+  for (const boundary of cityJoins.keys()) if (!art.backgrounds[boundary - 1] || !art.backgrounds[boundary]) cityJoins.delete(boundary);
 }
 
 // Align the actual opaque heads and feet; transparent padding is never used as a body measurement.
@@ -132,7 +136,8 @@ async function loadCity() {
       loadImage('vehicles/elevated-train-v1.png'),
       loadJson('vehicles/elevated-train-v1.json'),
       loadImage(`characters/samurai/${HERO_ACTIONS}.png`), loadJson(`characters/samurai/${HERO_ACTIONS}.json`),
-      loadImage(`characters/enemies/${ENEMY_ATLAS}.png`), loadJson(`characters/enemies/${ENEMY_ATLAS}.json`)
+      loadImage(`characters/enemies/${ENEMY_ATLAS}.png`), loadJson(`characters/enemies/${ENEMY_ATLAS}.json`),
+      loadImage('environments/city-join-column-v1.png')
       ])
     ]);
     art.idle = prepareSprite(results[0], null, 'hero', 1);
@@ -157,6 +162,7 @@ async function loadCity() {
     });
     art.train = results[3];
     art.trainCrop = results[4].suggested_source_rectangle;
+    art.cityColumn = results[9];
     const people = npcAtlases.flatMap(([image, metadata]) => metadata.characters.map(character => {
       const umbrella = character.kind === 'umbrella' || /umbrella|commuter/i.test(character.id);
       const sprite = prepareSprite(image, character, umbrella ? 'commuter' : 'person', character.default_direction ?? 1);
@@ -420,16 +426,14 @@ function drawDistricts() {
     if (art.backgrounds[index]) ctx.drawImage(art.backgrounds[index], x, 0, BLOCK_WIDTH, WORLD.height);
     else { ctx.fillStyle = '#0b1826'; ctx.fillRect(x, 0, BLOCK_WIDTH, WORLD.height); loadDistrict(index).catch(() => {}); }
   }
-  // Building-edge shadows make the joins read as passages between city blocks.
+  // Cache joined textures only for the currently loaded neighborhood.
+  const joinWidth = CITY_ART.joinWidth * BLOCK_WIDTH / CITY_ART.width;
   for (let index = 1; index < DISTRICTS.length; index++) {
     const x = index * BLOCK_WIDTH;
-    if (x < state.camera - 40 || x > state.camera + view.worldWidth + 40) continue;
-    const shade = ctx.createLinearGradient(x - 28, 0, x + 28, 0);
-    shade.addColorStop(0, 'rgba(5,9,16,0)');
-    shade.addColorStop(.47, 'rgba(5,9,16,.9)');
-    shade.addColorStop(.53, 'rgba(5,9,16,.9)');
-    shade.addColorStop(1, 'rgba(5,9,16,0)');
-    ctx.fillStyle = shade; ctx.fillRect(x - 28, 0, 56, WORLD.height);
+    if (x + joinWidth / 2 < state.camera || x - joinWidth / 2 > state.camera + view.worldWidth) continue;
+    if (!art.backgrounds[index - 1] || !art.backgrounds[index]) continue;
+    if (!cityJoins.has(index)) cityJoins.set(index, createCityJoin(art.backgrounds[index - 1], art.backgrounds[index], art.cityColumn, index));
+    ctx.drawImage(cityJoins.get(index), x - joinWidth / 2, 0, joinWidth, WORLD.height);
   }
 }
 function drawRain(foreground) {

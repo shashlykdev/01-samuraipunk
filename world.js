@@ -1,23 +1,23 @@
 export const BLOCK_WIDTH = 1672 * 1.18;
 export const DISTRICTS = [
-  { id: 'lantern', name: 'The Lantern District', image: 'cyberpunk-street-v1.png' },
-  { id: 'market', name: 'Market Street', image: 'cyberpunk-market-street-v1.png' },
-  { id: 'canal', name: 'Canal Promenade', image: 'cyberpunk-canal-street-v1.png' },
-  { id: 'station', name: 'Rainline Station', image: 'cyberpunk-station-v1.png' },
-  { id: 'arcade', name: 'Capsule Arcade', image: 'cyberpunk-arcade-v1.png' },
-  { id: 'clinic', name: 'Botanical Clinic', image: 'cyberpunk-clinic-v1.png' },
-  { id: 'workshops', name: 'Machine Row', image: 'cyberpunk-workshops-v1.png' },
-  { id: 'overpass', name: 'Under the Overpass', image: 'cyberpunk-overpass-v1.png' },
-  { id: 'torii', name: 'Red Torii Street', image: 'cyberpunk-torii-v1.png' },
-  { id: 'docks', name: 'Crane Harbor', image: 'cyberpunk-docks-v1.png' },
-  { id: 'freight', name: 'Freight Yard', image: 'cyberpunk-freight-v1.png' },
-  { id: 'power', name: 'The Power Quarter', image: 'cyberpunk-power-v1.png' },
-  { id: 'floodgate', name: 'Floodgate Avenue', image: 'cyberpunk-floodgate-v1.png' },
-  { id: 'plaza', name: 'Hologram Plaza', image: 'cyberpunk-plaza-v1.png' },
-  { id: 'rooftop', name: 'Garden Towers', image: 'cyberpunk-rooftop-v1.png' },
-  { id: 'citadel', name: 'Citadel Approach', image: 'cyberpunk-citadel-v1.png' },
-  { id: 'courtyard', name: 'Corporate Courtyard', image: 'cyberpunk-courtyard-v1.png' },
-  { id: 'dawn-gate', name: 'Dawn Gate', image: 'cyberpunk-dawn-gate-v1.png' }
+  { id: 'lantern', name: 'The Lantern District', image: 'cyberpunk-street-v1.png', pavement: [744, 824, 849] },
+  { id: 'market', name: 'Market Street', image: 'cyberpunk-market-street-v1.png', pavement: [714, 808, 829] },
+  { id: 'canal', name: 'Canal Promenade', image: 'cyberpunk-canal-street-v1.png', pavement: [724, 823, 849] },
+  { id: 'station', name: 'Rainline Station', image: 'cyberpunk-station-v1.png', pavement: [743, 824, 849] },
+  { id: 'arcade', name: 'Capsule Arcade', image: 'cyberpunk-arcade-v1.png', pavement: [739, 823, 849] },
+  { id: 'clinic', name: 'Botanical Clinic', image: 'cyberpunk-clinic-v1.png', pavement: [710, 794, 816] },
+  { id: 'workshops', name: 'Machine Row', image: 'cyberpunk-workshops-v1.png', pavement: [743, 824, 849] },
+  { id: 'overpass', name: 'Under the Overpass', image: 'cyberpunk-overpass-v1.png', pavement: [722, 815, 837] },
+  { id: 'torii', name: 'Red Torii Street', image: 'cyberpunk-torii-v1.png', pavement: [699, 776, 799] },
+  { id: 'docks', name: 'Crane Harbor', image: 'cyberpunk-docks-v1.png', pavement: [721, 799, 820] },
+  { id: 'freight', name: 'Freight Yard', image: 'cyberpunk-freight-v1.png', pavement: [719, 796, 817] },
+  { id: 'power', name: 'The Power Quarter', image: 'cyberpunk-power-v1.png', pavement: [743, 825, 851] },
+  { id: 'floodgate', name: 'Floodgate Avenue', image: 'cyberpunk-floodgate-v1.png', pavement: [705, 787, 808] },
+  { id: 'plaza', name: 'Hologram Plaza', image: 'cyberpunk-plaza-v1.png', pavement: [719, 795, 817] },
+  { id: 'rooftop', name: 'Garden Towers', image: 'cyberpunk-rooftop-v1.png', pavement: [743, 825, 851] },
+  { id: 'citadel', name: 'Citadel Approach', image: 'cyberpunk-citadel-v1.png', pavement: [722, 797, 820] },
+  { id: 'courtyard', name: 'Corporate Courtyard', image: 'cyberpunk-courtyard-v1.png', pavement: [733, 815, 838] },
+  { id: 'dawn-gate', name: 'Dawn Gate', image: 'cyberpunk-dawn-gate-v1.png', pavement: [744, 825, 851] }
 ];
 export const WORLD = { width: BLOCK_WIDTH * DISTRICTS.length, height: 941 * 1.18, ground: 941 * .90 * 1.18 };
 export const START_X = BLOCK_WIDTH * .54;
