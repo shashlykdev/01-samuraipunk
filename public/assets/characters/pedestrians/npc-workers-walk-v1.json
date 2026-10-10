@@ -1,0 +1,271 @@
+{
+  "width": 1254,
+  "height": 1254,
+  "image": "npc-workers-walk-v1.png",
+  "layout": {
+    "rows": 4,
+    "columns": 4,
+    "uniform_grid": false,
+    "row_boundaries": [
+      0,
+      322,
+      634,
+      942,
+      1254
+    ],
+    "note": "Four rows and columns; exact safe row rectangles measured from alpha valleys avoid uneven generated spacing."
+  },
+  "characters": [
+    {
+      "id": "mechanic",
+      "name": "Toolbox mechanic",
+      "row": 0,
+      "default_direction": 1,
+      "kind": "person",
+      "visual_height": 210,
+      "frames": [
+        {
+          "index": 0,
+          "x": 0,
+          "y": 0,
+          "width": 314,
+          "height": 322,
+          "opaque_bounds": {
+            "x": 80,
+            "y": 18,
+            "width": 138,
+            "height": 291
+          }
+        },
+        {
+          "index": 1,
+          "x": 314,
+          "y": 0,
+          "width": 313,
+          "height": 322,
+          "opaque_bounds": {
+            "x": 90,
+            "y": 19,
+            "width": 135,
+            "height": 292
+          }
+        },
+        {
+          "index": 2,
+          "x": 627,
+          "y": 0,
+          "width": 313,
+          "height": 322,
+          "opaque_bounds": {
+            "x": 101,
+            "y": 18,
+            "width": 132,
+            "height": 292
+          }
+        },
+        {
+          "index": 3,
+          "x": 940,
+          "y": 0,
+          "width": 314,
+          "height": 322,
+          "opaque_bounds": {
+            "x": 107,
+            "y": 19,
+            "width": 122,
+            "height": 291
+          }
+        }
+      ]
+    },
+    {
+      "id": "noodle-cook",
+      "name": "Noodle cook",
+      "row": 1,
+      "default_direction": 1,
+      "kind": "person",
+      "visual_height": 210,
+      "frames": [
+        {
+          "index": 0,
+          "x": 0,
+          "y": 322,
+          "width": 314,
+          "height": 312,
+          "opaque_bounds": {
+            "x": 102,
+            "y": 13,
+            "width": 110,
+            "height": 289
+          }
+        },
+        {
+          "index": 1,
+          "x": 314,
+          "y": 322,
+          "width": 313,
+          "height": 312,
+          "opaque_bounds": {
+            "x": 113,
+            "y": 14,
+            "width": 110,
+            "height": 290
+          }
+        },
+        {
+          "index": 2,
+          "x": 627,
+          "y": 322,
+          "width": 313,
+          "height": 312,
+          "opaque_bounds": {
+            "x": 120,
+            "y": 14,
+            "width": 110,
+            "height": 289
+          }
+        },
+        {
+          "index": 3,
+          "x": 940,
+          "y": 322,
+          "width": 314,
+          "height": 312,
+          "opaque_bounds": {
+            "x": 130,
+            "y": 14,
+            "width": 104,
+            "height": 288
+          }
+        }
+      ]
+    },
+    {
+      "id": "salaryman",
+      "name": "Salaryman",
+      "row": 2,
+      "default_direction": 1,
+      "kind": "person",
+      "visual_height": 210,
+      "frames": [
+        {
+          "index": 0,
+          "x": 0,
+          "y": 634,
+          "width": 314,
+          "height": 308,
+          "opaque_bounds": {
+            "x": 93,
+            "y": 10,
+            "width": 125,
+            "height": 289
+          }
+        },
+        {
+          "index": 1,
+          "x": 314,
+          "y": 634,
+          "width": 313,
+          "height": 308,
+          "opaque_bounds": {
+            "x": 104,
+            "y": 10,
+            "width": 125,
+            "height": 291
+          }
+        },
+        {
+          "index": 2,
+          "x": 627,
+          "y": 634,
+          "width": 313,
+          "height": 308,
+          "opaque_bounds": {
+            "x": 108,
+            "y": 9,
+            "width": 124,
+            "height": 291
+          }
+        },
+        {
+          "index": 3,
+          "x": 940,
+          "y": 634,
+          "width": 314,
+          "height": 308,
+          "opaque_bounds": {
+            "x": 124,
+            "y": 11,
+            "width": 102,
+            "height": 289
+          }
+        }
+      ]
+    },
+    {
+      "id": "security-worker",
+      "name": "Security worker",
+      "row": 3,
+      "default_direction": 1,
+      "kind": "person",
+      "visual_height": 210,
+      "frames": [
+        {
+          "index": 0,
+          "x": 0,
+          "y": 942,
+          "width": 314,
+          "height": 312,
+          "opaque_bounds": {
+            "x": 101,
+            "y": 8,
+            "width": 114,
+            "height": 285
+          }
+        },
+        {
+          "index": 1,
+          "x": 314,
+          "y": 942,
+          "width": 313,
+          "height": 312,
+          "opaque_bounds": {
+            "x": 108,
+            "y": 10,
+            "width": 115,
+            "height": 284
+          }
+        },
+        {
+          "index": 2,
+          "x": 627,
+          "y": 942,
+          "width": 313,
+          "height": 312,
+          "opaque_bounds": {
+            "x": 119,
+            "y": 10,
+            "width": 111,
+            "height": 284
+          }
+        },
+        {
+          "index": 3,
+          "x": 940,
+          "y": 942,
+          "width": 314,
+          "height": 312,
+          "opaque_bounds": {
+            "x": 124,
+            "y": 11,
+            "width": 109,
+            "height": 283
+          }
+        }
+      ]
+    }
+  ],
+  "status": "Generated under user authorization; no approval pause required",
+  "alpha": "Genuine transparent alpha with opaque character bodies",
+  "animation": "Four-frame calm tiny-step walk"
+}

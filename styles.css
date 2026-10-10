@@ -41,6 +41,11 @@ h1 em { font-style: normal; color: var(--pink); }
 .interact kbd { border-color: #f2dfa67a; color: #f2dfa6; }
 .stops { margin-left: auto; font: 9px/1.5 ui-monospace, monospace; letter-spacing: .1em; color: #c8c4ce; text-shadow: 0 2px 8px #000; }
 .stops > span { color: var(--paper); margin-right: 10px; font-size: 12px; }
+.journey { position: absolute; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; font: 8px/1 ui-monospace, monospace; letter-spacing: .12em; color: #c0bdc7; text-shadow: 0 2px 8px #000; }
+.journey-line { position: relative; width: 135px; height: 1px; background: #d9ccd266; }
+.journey-line::before, .journey-line::after { content: ''; position: absolute; width: 3px; height: 5px; top: -2px; background: #c5b6c6; }
+.journey-line::before { left: 33.333%; }.journey-line::after { left: 66.666%; }
+.journey-line i { position: absolute; width: 6px; height: 6px; top: -2.5px; transform: translateX(-50%); border-radius: 50%; background: var(--paper); box-shadow: 0 0 8px #f0e5d088; }
 .touch-controls { display: none; position: absolute; bottom: max(22px, env(safe-area-inset-bottom)); left: 20px; right: 20px; align-items: center; justify-content: space-between; gap: 16px; }
 .touch-movement { display: flex; gap: 10px; }
 .touch-controls button { border: 1px solid #f1e8da66; border-radius: 5px; background: #0d1523c4; min-height: 55px; min-width: 62px; user-select: none; -webkit-user-select: none; touch-action: none; }
@@ -73,6 +78,8 @@ dialog p { font-size: 13px; line-height: 1.85; color: #b9bdc7; }
   .edition > span { display: none; }
   .walk-hud { bottom: 100px; left: 20px; right: 20px; }
   .hint { display: none; }
+  .journey { left: 0; transform: none; gap: 8px; }
+  .journey > span { display: none; }.journey-line { width: 100px; }
   .interact { bottom: 25px; }
   .touch-controls { display: flex; }
   .toast { top: 85px; width: 85vw; }

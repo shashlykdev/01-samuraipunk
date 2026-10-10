@@ -1,0 +1,165 @@
+{
+  "image": "npc-nightlife-walk-v1.png",
+  "width": 1254,
+  "height": 1254,
+  "layout": {
+    "rows": 4,
+    "columns": 4
+  },
+  "status": "Generated under user authorization; no approval pause required.",
+  "notes": "Four character rows with relaxed small-step poses. Generated row spacing varies slightly; explicit source rectangles follow transparent gaps so no sprite crosses a source rectangle. Opaque solid characters on transparent alpha.",
+  "characters": [
+    {
+      "id": "monk-straw-hat",
+      "name": "Straw-hat monk",
+      "row": 0,
+      "default_direction": 1,
+      "kind": "person",
+      "visual_height": 218,
+      "frames": [
+        {
+          "index": 0,
+          "x": 0,
+          "y": 0,
+          "width": 314,
+          "height": 316
+        },
+        {
+          "index": 1,
+          "x": 314,
+          "y": 0,
+          "width": 313,
+          "height": 316
+        },
+        {
+          "index": 2,
+          "x": 627,
+          "y": 0,
+          "width": 313,
+          "height": 316
+        },
+        {
+          "index": 3,
+          "x": 940,
+          "y": 0,
+          "width": 314,
+          "height": 316
+        }
+      ]
+    },
+    {
+      "id": "indigo-fashion",
+      "name": "Indigo fashion walker",
+      "row": 1,
+      "default_direction": 1,
+      "kind": "person",
+      "visual_height": 230,
+      "frames": [
+        {
+          "index": 0,
+          "x": 0,
+          "y": 316,
+          "width": 314,
+          "height": 330
+        },
+        {
+          "index": 1,
+          "x": 314,
+          "y": 316,
+          "width": 313,
+          "height": 330
+        },
+        {
+          "index": 2,
+          "x": 627,
+          "y": 316,
+          "width": 313,
+          "height": 330
+        },
+        {
+          "index": 3,
+          "x": 940,
+          "y": 316,
+          "width": 314,
+          "height": 330
+        }
+      ]
+    },
+    {
+      "id": "cranberry-elder",
+      "name": "Cranberry-coated elder",
+      "row": 2,
+      "default_direction": 1,
+      "kind": "person",
+      "visual_height": 190,
+      "frames": [
+        {
+          "index": 0,
+          "x": 0,
+          "y": 646,
+          "width": 314,
+          "height": 287
+        },
+        {
+          "index": 1,
+          "x": 314,
+          "y": 646,
+          "width": 313,
+          "height": 287
+        },
+        {
+          "index": 2,
+          "x": 627,
+          "y": 646,
+          "width": 313,
+          "height": 287
+        },
+        {
+          "index": 3,
+          "x": 940,
+          "y": 646,
+          "width": 314,
+          "height": 287
+        }
+      ]
+    },
+    {
+      "id": "blue-tourist",
+      "name": "Blue-puffer tourist",
+      "row": 3,
+      "default_direction": 1,
+      "kind": "person",
+      "visual_height": 210,
+      "frames": [
+        {
+          "index": 0,
+          "x": 0,
+          "y": 933,
+          "width": 314,
+          "height": 321
+        },
+        {
+          "index": 1,
+          "x": 314,
+          "y": 933,
+          "width": 313,
+          "height": 321
+        },
+        {
+          "index": 2,
+          "x": 627,
+          "y": 933,
+          "width": 313,
+          "height": 321
+        },
+        {
+          "index": 3,
+          "x": 940,
+          "y": 933,
+          "width": 314,
+          "height": 321
+        }
+      ]
+    }
+  ]
+}

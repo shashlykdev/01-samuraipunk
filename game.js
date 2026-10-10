@@ -1,47 +1,28 @@
-import { clamp, movementAxis, safeDelta, cameraTarget, movePlayer, wrapPedestrian, closestStop, restoreVisits } from './engine.js';
+import { clamp, movementAxis, safeDelta, cameraTarget, districtIndex, movePlayer, wrapPedestrian, closestStop, restoreVisits } from './engine.js';
+import { BLOCK_WIDTH, DISTRICTS, WORLD, START_X, NPC_ATLASES, STOPS as stops } from './world.js';
 
 const $ = id => document.getElementById(id);
 const canvas = $('scene');
 const ctx = canvas.getContext('2d', { alpha: false });
-const WORLD = { width: 1672 * 1.18, height: 941 * 1.18, ground: 941 * .90 * 1.18 };
 const SAVE_KEY = 'neon-ronin-night-stops-v1';
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const keys = new Set();
 const touch = { left: false, right: false };
-const player = { x: WORLD.width * .54, direction: 1, phase: 0, moving: false };
+const player = { x: START_X, direction: 1, phase: 0, moving: false };
 const state = { mode: 'loading', clock: 0, camera: 0, nearest: null, loaded: false, muted: true, elapsed: 0 };
 const view = { width: innerWidth, height: innerHeight, worldWidth: 1672, worldHeight: 941, scale: 1, dpr: 1, cameraY: 0 };
 const art = {};
+const spritePixels = new WeakMap();
 let audio = null;
 let lastFrame = performance.now();
 let lastHud = 0;
 let toastTimeout;
 
-const stops = [
-  { id: 'lanterns', x: WORLD.width * .12, name: 'Paper Lanterns', label: '01 / A QUIET CORNER',
-    copy: 'Under the red lanterns, the noise of the street falls away. A small shrine watches over the people still finding their way home.',
-    detail: 'For a moment, all you hear is rain against the roof.' },
-  { id: 'noodles', x: WORLD.width * .30, name: 'Lantern Noodles', label: '02 / SOMETHING WARM',
-    copy: 'Steam curls out into the night. The cook gives you a familiar nod and sets a bowl on the counter. There is always one more seat here.',
-    detail: 'Hot broth, a quiet conversation, and the last train passing overhead.' },
-  { id: 'market', x: WORLD.width * .72, name: 'The Night Market', label: '03 / OPEN UNTIL MORNING',
-    copy: 'A courier slips past the vending machines. Beyond the glass, rows of small necessities glow in neat colors. The city keeps its own hours.',
-    detail: 'You pick a warm drink and watch the reflections move across the pavement.' }
-];
 let visits;
 try { visits = restoreVisits(localStorage.getItem(SAVE_KEY), stops.map(stop => stop.id)); }
 catch { visits = new Set(); }
 
-const CROWD_SIZE = 6;
-const pedestrians = Array.from({ length: CROWD_SIZE }, (_, index) => ({
-  x: (index + .3) / CROWD_SIZE * WORLD.width,
-  type: index % 3 === 0 ? 'commuter' : 'courier',
-  direction: index % 2 ? 1 : -1,
-  speed: 42 + ((index * 17) % 39),
-  phase: index * .79,
-  size: .84 + (index % 4) * .055,
-  ground: WORLD.ground - 20 - (index % 3) * 15
-}));
+let pedestrians = [];
 const rain = Array.from({ length: 160 }, () => ({ x: Math.random(), y: Math.random(), depth: .3 + Math.random() * .7 }));
 
 async function loadImage(path) {
@@ -58,18 +39,21 @@ async function loadJson(path) {
 
 // Align the actual opaque heads and feet; transparent padding is never used as a body measurement.
 function prepareSprite(image, metadata, type, defaultDirection) {
-  const sample = document.createElement('canvas');
-  sample.width = image.naturalWidth;
-  sample.height = image.naturalHeight;
-  const sampleCtx = sample.getContext('2d', { willReadFrequently: true });
-  sampleCtx.drawImage(image, 0, 0);
-  const { data } = sampleCtx.getImageData(0, 0, sample.width, sample.height);
-  const frames = metadata?.frames ?? [{ x: 0, y: 0, width: sample.width, height: sample.height }];
+  if (!spritePixels.has(image)) {
+    const sample = document.createElement('canvas');
+    sample.width = image.naturalWidth; sample.height = image.naturalHeight;
+    const sampleCtx = sample.getContext('2d', { willReadFrequently: true });
+    sampleCtx.drawImage(image, 0, 0);
+    spritePixels.set(image, sampleCtx.getImageData(0, 0, sample.width, sample.height).data);
+  }
+  const data = spritePixels.get(image);
+  const width = image.naturalWidth;
+  const frames = metadata?.frames ?? [{ x: 0, y: 0, width, height: image.naturalHeight }];
   const prepared = frames.map(frame => {
     let x0 = frame.width, y0 = frame.height, x1 = 0, y1 = 0;
     for (let y = 0; y < frame.height; y++) {
       for (let x = 0; x < frame.width; x++) {
-        if (data[((y + frame.y) * sample.width + frame.x + x) * 4 + 3] > 20) {
+        if (data[((y + frame.y) * width + frame.x + x) * 4 + 3] > 20) {
           x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y);
         }
       }
@@ -80,7 +64,7 @@ function prepareSprite(image, metadata, type, defaultDirection) {
     let weight = 0, weightedX = 0;
     for (let y = bandStart; y < bandEnd; y++) {
       for (let x = x0; x <= x1; x++) {
-        const alpha = data[((y + frame.y) * sample.width + frame.x + x) * 4 + 3];
+        const alpha = data[((y + frame.y) * width + frame.x + x) * 4 + 3];
         if (alpha > 100) { weight += alpha; weightedX += x * alpha; }
       }
     }
@@ -92,25 +76,36 @@ function prepareSprite(image, metadata, type, defaultDirection) {
 
 async function loadCity() {
   try {
-    const results = await Promise.all([
-      loadImage('environments/cyberpunk-street-v1.png'),
+    const [backgrounds, npcAtlases, results] = await Promise.all([
+      Promise.all(DISTRICTS.map(district => loadImage(`environments/${district.image}`))),
+      Promise.all(NPC_ATLASES.map(name => Promise.all([
+        loadImage(`characters/pedestrians/${name}.png`), loadJson(`characters/pedestrians/${name}.json`)
+      ]))),
+      Promise.all([
       loadImage('characters/samurai/samurai-idle-v2-ivory.png'),
       loadImage('characters/samurai/samurai-walk-v2-ivory.png'),
       loadJson('characters/samurai/samurai-walk-v2-ivory.json'),
-      loadImage('characters/pedestrians/commuter-umbrella-walk-v1.png'),
-      loadJson('characters/pedestrians/commuter-umbrella-walk-v1.json'),
-      loadImage('characters/pedestrians/courier-walk-v1.png'),
-      loadJson('characters/pedestrians/courier-walk-v1.json'),
       loadImage('vehicles/elevated-train-v1.png'),
       loadJson('vehicles/elevated-train-v1.json')
+      ])
     ]);
-    art.city = results[0];
-    art.idle = prepareSprite(results[1], null, 'hero', 1);
-    art.hero = prepareSprite(results[2], results[3], 'hero', 1);
-    art.commuter = prepareSprite(results[4], results[5], 'commuter', -1);
-    art.courier = prepareSprite(results[6], results[7], 'courier', 1);
-    art.train = results[8];
-    art.trainCrop = results[9].suggested_source_rectangle;
+    art.backgrounds = backgrounds;
+    art.idle = prepareSprite(results[0], null, 'hero', 1);
+    art.hero = prepareSprite(results[1], results[2], 'hero', 1);
+    art.train = results[3];
+    art.trainCrop = results[4].suggested_source_rectangle;
+    const people = npcAtlases.flatMap(([image, metadata]) => metadata.characters.map(character => {
+      const umbrella = character.kind === 'umbrella' || /umbrella|commuter/i.test(character.id);
+      const sprite = prepareSprite(image, character, umbrella ? 'commuter' : 'person', character.default_direction ?? 1);
+      const visualHeight = Math.max(...sprite.frames.map(frame => frame.bounds.height));
+      return { id: character.id, sprite, height: (character.visual_height ?? (umbrella ? 250 : 210)) * sprite.sourceHeight / visualHeight };
+    }));
+    if (new Set(people.map(person => person.id)).size < 15) throw new Error('The city needs at least fifteen distinct pedestrians.');
+    pedestrians = people.map((person, index) => ({
+      ...person, x: (index + .3) / people.length * WORLD.width,
+      direction: index % 2 ? 1 : -1, speed: 26 + ((index * 5) % 13), phase: index * .79,
+      size: .94 + (index % 4) * .025, ground: WORLD.ground - 22 - (index % 3) * 12
+    }));
     state.loaded = true;
     state.mode = 'welcome';
     resize();
@@ -161,17 +156,17 @@ function drawTrain() {
   const crop = art.trainCrop;
   const width = 950;
   const height = width * crop.height / crop.width;
-  const x = WORLD.width + 1000 - ((state.clock * 145 + 1300) % (WORLD.width + 2000));
+  const x = BLOCK_WIDTH + 1000 - ((state.clock * 145 + 1300) % (BLOCK_WIDTH + 2000));
   const rail = 941 * .199 * 1.18;
   ctx.save();
-  ctx.beginPath(); ctx.rect(WORLD.width * .313, 45, WORLD.width * .46, rail - 45); ctx.clip();
+  ctx.beginPath(); ctx.rect(BLOCK_WIDTH * .313, 45, BLOCK_WIDTH * .46, rail - 45); ctx.clip();
   ctx.globalAlpha = .95;
   ctx.drawImage(art.train, crop.x, crop.y, crop.width, crop.height, x, rail - height, width, height);
   ctx.restore();
 }
 function drawSteam() {
   if (reducedMotion) return;
-  const originX = WORLD.width * .295;
+  const originX = BLOCK_WIDTH * .295;
   const originY = WORLD.ground - 180;
   for (let i = 0; i < 5; i++) {
     const progress = ((state.clock * .18 + i / 5) % 1);
@@ -182,6 +177,24 @@ function drawSteam() {
     cloud.addColorStop(0, `rgba(215,213,230,${.07 * (1 - progress)})`);
     cloud.addColorStop(1, 'rgba(215,213,230,0)');
     ctx.fillStyle = cloud; ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+  }
+}
+function drawDistricts() {
+  for (let index = 0; index < art.backgrounds.length; index++) {
+    const x = index * BLOCK_WIDTH;
+    if (x + BLOCK_WIDTH < state.camera || x > state.camera + view.worldWidth) continue;
+    ctx.drawImage(art.backgrounds[index], x, 0, BLOCK_WIDTH, WORLD.height);
+  }
+  // Building-edge shadows make the joins read as passages between city blocks.
+  for (let index = 1; index < DISTRICTS.length; index++) {
+    const x = index * BLOCK_WIDTH;
+    if (x < state.camera - 40 || x > state.camera + view.worldWidth + 40) continue;
+    const shade = ctx.createLinearGradient(x - 28, 0, x + 28, 0);
+    shade.addColorStop(0, 'rgba(5,9,16,0)');
+    shade.addColorStop(.47, 'rgba(5,9,16,.9)');
+    shade.addColorStop(.53, 'rgba(5,9,16,.9)');
+    shade.addColorStop(1, 'rgba(5,9,16,0)');
+    ctx.fillStyle = shade; ctx.fillRect(x - 28, 0, 56, WORLD.height);
   }
 }
 function drawRain(foreground) {
@@ -208,7 +221,7 @@ function render() {
   ctx.setTransform(view.dpr * view.scale, 0, 0, view.dpr * view.scale, 0, 0);
   ctx.imageSmoothingEnabled = false;
   ctx.save(); ctx.translate(-state.camera, -view.cameraY);
-  ctx.drawImage(art.city, 0, 0, WORLD.width, WORLD.height);
+  drawDistricts();
   drawTrain();
   drawSteam();
   ctx.restore();
@@ -217,9 +230,9 @@ function render() {
   const crowd = [...pedestrians].sort((a, b) => a.ground - b.ground);
   for (const person of crowd) {
     if (person.x < state.camera - 160 || person.x > state.camera + view.worldWidth + 160) continue;
-    const height = (person.type === 'commuter' ? 272 : 224) * person.size;
+    const height = person.height * person.size;
     shadow(person.x, person.ground, 26 * person.size, .14);
-    drawSprite(art[person.type], person.phase, person.x, person.ground, height, person.direction);
+    drawSprite(person.sprite, person.phase, person.x, person.ground, height, person.direction);
   }
   if (state.mode === 'playing' && state.nearest) {
     const stop = state.nearest;
@@ -237,7 +250,7 @@ function update(dt) {
   state.clock += dt;
   for (const person of pedestrians) {
     person.x = wrapPedestrian(person.x + person.direction * person.speed * dt, WORLD.width);
-    person.phase += dt * (person.speed / 16);
+    person.phase += dt * person.speed / 14;
   }
   if (state.mode === 'playing') {
     state.elapsed += dt;
@@ -269,7 +282,15 @@ function updateHud() {
   canvas.dataset.playerX = player.x.toFixed(1);
   canvas.dataset.cameraX = state.camera.toFixed(1);
   canvas.dataset.visited = String(visits.size);
-  $('stop-count').textContent = `${visits.size} / 3`;
+  const district = districtIndex(player.x, BLOCK_WIDTH, DISTRICTS.length);
+  canvas.dataset.district = DISTRICTS[district].id;
+  canvas.dataset.npcTypes = String(pedestrians.length);
+  canvas.dataset.npcIds = pedestrians.map(person => person.id).join(',');
+  canvas.dataset.maxNpcSpeed = String(Math.max(0, ...pedestrians.map(person => person.speed)));
+  $('district-name').textContent = `${String(district + 1).padStart(2, '0')} / ${DISTRICTS[district].name.toUpperCase()}`;
+  $('journey-position').style.left = `${player.x / WORLD.width * 100}%`;
+  $('journey-route').setAttribute('aria-label', `District ${district + 1} of ${DISTRICTS.length}: ${DISTRICTS[district].name}`);
+  $('stop-count').textContent = `${visits.size} / ${stops.length}`;
   const available = state.mode === 'playing' && state.nearest;
   $('interact').hidden = !available;
   if (available) $('interact-name').textContent = `${state.nearest.name}${visits.has(state.nearest.id) ? ' · revisit' : ''}`;
@@ -294,7 +315,7 @@ function resumeWalk() {
   canvas.focus(); updateHud();
 }
 function restartWalk() {
-  visits.clear(); saveVisits(); player.x = WORLD.width * .54; player.direction = 1; player.phase = 0;
+  visits.clear(); saveVisits(); player.x = START_X; player.direction = 1; player.phase = 0;
   state.elapsed = 0; state.camera = cameraTarget(player.x, view.worldWidth, WORLD.width);
   resumeWalk(); showToast('A fresh night. The city is yours to explore.');
 }
@@ -342,7 +363,7 @@ class CityAudio {
   resume() { return this.context.resume(); }
   suspend() { return this.context.suspend(); }
   setTrain(clock) {
-    const cycle = ((clock * 145 + 1300) % (WORLD.width + 2000));
+    const cycle = ((clock * 145 + 1300) % (BLOCK_WIDTH + 2000));
     const presence = Math.max(0, 1 - Math.abs(cycle - 2100) / 900);
     this.trainGain.gain.setTargetAtTime(presence * .09, this.context.currentTime, .2);
   }

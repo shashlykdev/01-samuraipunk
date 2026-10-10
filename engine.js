@@ -2,6 +2,7 @@ export const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 export const movementAxis = (left, right) => Number(Boolean(right)) - Number(Boolean(left));
 export const safeDelta = seconds => clamp(Number.isFinite(seconds) ? seconds : 0, 0, 0.05);
 export const cameraTarget = (x, viewWidth, worldWidth) => clamp(x - viewWidth / 2, 0, Math.max(0, worldWidth - viewWidth));
+export const districtIndex = (x, blockWidth, count) => clamp(Math.floor(x / blockWidth), 0, count - 1);
 export function movePlayer(x, axis, dt, fast, worldWidth) {
   return clamp(x + clamp(axis, -1, 1) * (fast ? 170 : 100) * safeDelta(dt), 65, worldWidth - 65);
 }

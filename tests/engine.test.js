@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { movementAxis, movePlayer, cameraTarget, safeDelta, wrapPedestrian, closestStop, restoreVisits } from '../engine.js';
+import { movementAxis, movePlayer, cameraTarget, districtIndex, safeDelta, wrapPedestrian, closestStop, restoreVisits } from '../engine.js';
+import { BLOCK_WIDTH, DISTRICTS, WORLD, STOPS } from '../world.js';
 
 test('opposing controls cancel and frame stalls do not teleport the player', () => {
   assert.equal(movementAxis(true, true), 0);
@@ -32,4 +33,20 @@ test('saved progress tolerates corrupted data and removes unknown stops', () => 
   assert.deepEqual([...restoreVisits('broken', ['a'])], []);
   assert.deepEqual([...restoreVisits('{"a":true}', ['a'])], []);
   assert.deepEqual([...restoreVisits('["a","a","unknown"]', ['a'])], ['a']);
+});
+test('district transitions and camera continue beyond the original block', () => {
+  assert.equal(districtIndex(BLOCK_WIDTH - 1, BLOCK_WIDTH, DISTRICTS.length), 0);
+  assert.equal(districtIndex(BLOCK_WIDTH, BLOCK_WIDTH, DISTRICTS.length), 1);
+  assert.equal(districtIndex(BLOCK_WIDTH * 2 + 1, BLOCK_WIDTH, DISTRICTS.length), 2);
+  assert.equal(districtIndex(-1, BLOCK_WIDTH, DISTRICTS.length), 0);
+  assert.equal(districtIndex(WORLD.width + 1, BLOCK_WIDTH, DISTRICTS.length), 2);
+  assert.ok(cameraTarget(BLOCK_WIDTH * 2.5, 500, WORLD.width) > BLOCK_WIDTH * 2);
+  assert.ok(movePlayer(BLOCK_WIDTH - 1, 1, .05, false, WORLD.width) > BLOCK_WIDTH);
+});
+test('new storefronts are reachable and existing discoveries survive the expansion', () => {
+  for (const stop of STOPS) {
+    assert.ok(stop.x > 65 && stop.x < WORLD.width - 65);
+    assert.equal(closestStop(stop.x, STOPS)?.id, stop.id);
+  }
+  assert.deepEqual([...restoreVisits('["lanterns","noodles","market"]', STOPS.map(stop => stop.id))], ['lanterns', 'noodles', 'market']);
 });
