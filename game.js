@@ -243,17 +243,18 @@ function drawEnemy(foe) {
   if (foe.health <= 0 && foe.deathTime <= 0) return;
   const sprite = art.enemies[foe.type];
   let phase = sprite.clips.guard[0];
-  if (foe.mode === 'walk') phase = sprite.clips.walk[Math.floor(foe.phase) % 4];
+  if (foe.mode === 'walk' || foe.mode === 'recover') phase = sprite.clips.walk[Math.floor(foe.phase) % 4];
   if (foe.mode === 'windup') phase = sprite.clips.windup[0];
   if (foe.mode === 'strike') phase = sprite.clips.strike[0];
   if (foe.stun > 0 || foe.health <= 0) phase = sprite.clips.hurt[0];
   const height = sprite.height * (foe.boss ? 1.12 : 1);
   shadow(foe.x, WORLD.ground, 31, .24);
   if (foe.mode === 'windup') {
-    const charge = clamp(foe.timer / foe.windup, 0, 1);
+    const charge = clamp(foe.timer / foe.attackWindup, 0, 1);
     ctx.strokeStyle = `rgba(255,105,103,${.4 + charge * .55})`; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.ellipse(foe.x, WORLD.ground + 2, 32 + charge * 15, 7, 0, 0, Math.PI * 2); ctx.stroke();
-    ctx.fillStyle = '#ffc493'; ctx.font = 'bold 25px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('!', foe.x, WORLD.ground - 244);
+    ctx.beginPath(); ctx.moveTo(foe.x, WORLD.ground + 7); ctx.lineTo(foe.x + foe.direction * (foe.reach + foe.lungeDistance), WORLD.ground + 7); ctx.stroke();
+    ctx.fillStyle = '#ffc493'; ctx.font = 'bold 25px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(foe.comboIndex ? '!!' : '!', foe.x, WORLD.ground - (foe.boss ? 312 : 285));
   }
   ctx.save();
   if (foe.health <= 0) ctx.globalAlpha = foe.deathTime / .45;
@@ -261,6 +262,11 @@ function drawEnemy(foe) {
   footShadows(sprite, phase, foe.x, WORLD.ground, height, foe.direction);
   drawSprite(sprite, phase, foe.x, WORLD.ground, height, foe.direction);
   ctx.restore();
+  if (foe.mode === 'strike' && foe.health > 0 && foe.timer - foe.attackWindup < .22) {
+    ctx.save(); ctx.translate(foe.x, WORLD.ground - 115); ctx.scale(foe.direction, 1);
+    ctx.strokeStyle = '#ff7e72'; ctx.lineWidth = 4; ctx.shadowColor = '#e44b51'; ctx.shadowBlur = 9;
+    ctx.beginPath(); ctx.arc(12, 0, foe.reach - 14, -.85, .65); ctx.stroke(); ctx.restore();
+  }
   if (foe.health > 0 && (foe.health < foe.maxHealth || Math.abs(foe.x - player.x) < 420)) {
     const y = WORLD.ground - (foe.boss ? 267 : 239), width = foe.boss ? 100 : 64;
     ctx.fillStyle = '#080b14cc'; ctx.fillRect(foe.x - width / 2, y, width, 5);
@@ -652,7 +658,7 @@ function retryCheckpoint() {
   player.y = 0; player.vy = 0; player.hurt = 0; player.blink = 0; player.attack = null; player.dodge = 0; player.invulnerable = 2;
   player.pendingEvents = []; player.hitChain = 0; player.comboGrace = 0;
   for (const foe of enemies) if (foe.health > 0 && Math.abs(foe.home - state.checkpoint) < BLOCK_WIDTH) {
-    foe.x = foe.home; foe.health = foe.maxHealth; foe.stun = 0; foe.mode = 'idle'; foe.cooldown = 1;
+    Object.assign(foe, createEnemy(foe.id, foe.home, foe.type, foe.boss), { cycleDistance: foe.cycleDistance, cooldown: 1 });
   }
   state.hitstop = 0; state.mode = 'playing'; state.camera = cameraTarget(player.x, view.worldWidth, WORLD.width); lastFrame = performance.now();
   if (!state.muted) audio?.resume(); canvas.focus(); updateHud();

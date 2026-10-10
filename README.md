@@ -26,7 +26,9 @@ Open http://127.0.0.1:8766. No package installation is required.
 
 ## Combat and recovery
 
-The samurai has 100 health. Draw Cut, Return Cut, and Storm Break form a three-stage combo, with increasing damage and reach. Consecutive hits build a hit counter and score multiplier. Enemy windups are marked with a red warning; jump or dodge to avoid the strike. Armored enforcers can finish committed attacks through light cuts, while Storm Break interrupts them.
+The samurai has 100 health. Draw Cut, Return Cut, and Storm Break form a three-stage combo, with increasing damage and reach. Consecutive hits build a hit counter and score multiplier. Enemies pursue a normal walk, start attacks from outside the first cut's reach, and lunge into range. Red warnings show their direction and reach. They aim early, then commit, so a late dodge through an attack can make it miss. Jumping also clears melee strikes.
+
+Light cuts deal damage but only briefly stagger an enemy before it gains temporary resolve and counters. Storm Break always breaks that resolve and creates a longer opening. Nearby enemies take turns committing to attacks and backstep during recovery. The gate commander follows its first strike with a separately warned second cut, then leaves a recovery opening. Damage and enemy health are unchanged by this behavior update.
 
 There are 36 enemies, including the Dawn Gate commander. Every third defeat drops a healing pickup worth 18 health. Reaching a new district unlocks a checkpoint and restores health once. Your first rest at each storefront during a run restores 25 health. On defeat, retry from the current checkpoint with full health and stamina; defeated enemies and score are retained for that run. Defeating the commander clears the objective and allows continued exploration.
 
@@ -55,4 +57,4 @@ npm test
 npm run build
 ```
 
-The 26 automated checks cover movement, map bounds, jump/landing, combo buffering and damage, facing and reach, dodge stamina/invulnerability, armored counterattacks, death, enemy spawns, independent held touch inputs, cancellation, and portrait/landscape playfield bounds. Browser QA also covers all fifteen new district routes, keyboard fights, the commander objective, recovery, and phone-sized portrait and landscape controls.
+The 31 automated checks cover movement, map bounds, jump/landing, combo buffering and damage, facing and reach, dodge stamina/invulnerability, enemy pursuit, lunges, counters, coordinated attacks, locked strike direction, boss followups, death, enemy spawns, independent held touch inputs, cancellation, and portrait/landscape playfield bounds. Browser QA also covers all fifteen new district routes, keyboard fights, the commander objective, recovery, and phone-sized portrait and landscape controls.

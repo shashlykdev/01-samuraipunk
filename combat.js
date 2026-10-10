@@ -16,11 +16,23 @@ export function createHero(x) {
 }
 export function createEnemy(id, x, type = 'raider', boss = false) {
   const maxHealth = boss ? 300 : type === 'enforcer' ? 112 : 70;
+  const windup = boss ? .5 : type === 'enforcer' ? .58 : .46;
   return { id, x, home: x, type, boss, health: maxHealth, maxHealth, direction: -1, phase: 0,
     mode: 'idle', timer: 0, cooldown: .7, stun: 0, flash: 0, deathTime: 0, attackLanded: false,
-    speed: boss ? 65 : type === 'enforcer' ? 56 : 68, cycleDistance: 170,
-    windup: boss ? .66 : type === 'enforcer' ? .68 : .56, reach: boss ? 126 : 98,
+    speed: boss ? 110 : type === 'enforcer' ? 96 : 112, cycleDistance: 170,
+    windup, attackWindup: windup, resolve: 0, counterReady: false, comboIndex: 0,
+    attackStart: boss ? 210 : type === 'enforcer' ? 190 : 176,
+    lungeDistance: boss ? 100 : type === 'enforcer' ? 82 : 76, lungeRemaining: 0,
+    lungeSpeed: boss ? 400 : type === 'enforcer' ? 340 : 370, reach: boss ? 128 : 108,
     damage: boss ? 22 : type === 'enforcer' ? 15 : 10 };
+}
+
+function startEnemyAttack(foe, hero, followup = false) {
+  foe.direction = hero.x >= foe.x ? 1 : -1;
+  foe.mode = 'windup'; foe.timer = 0; foe.attackLanded = false;
+  foe.attackWindup = followup ? .4 : foe.counterReady ? (foe.type === 'enforcer' ? .4 : .32) : foe.windup;
+  foe.counterReady = false; foe.lungeRemaining = foe.lungeDistance;
+  if (!followup) foe.comboIndex = 0;
 }
 export function requestJump(hero) {
   if (hero.health <= 0 || hero.y > 0 || hero.hurt > 0 || hero.dodge > 0) return false;
@@ -97,10 +109,17 @@ export function stepCombat(hero, enemies, seconds, input, worldWidth) {
         attack.hits.add(foe.id);
         const damage = move.damage + (attack.airborne ? 4 : 0);
         foe.health = Math.max(0, foe.health - damage); foe.flash = .12;
-        // A committed armored strike needs a dodge, jump, or combo finisher to interrupt it.
-        const armored = foe.type === 'enforcer' && attack.stage !== 2 && ['windup', 'strike'].includes(foe.mode);
-        if (!armored) { foe.stun = attack.stage === 2 ? .58 : .34; foe.mode = 'hurt'; foe.timer = 0; foe.cooldown = .65; }
-        foe.x = clamp(foe.x + hero.direction * move.push, 65, worldWidth - 65);
+        // Light cuts still damage, but repeated cuts give enemies resolve to counter.
+        // Finishers always break that resolve and earn a full recovery opening.
+        const committed = ['windup', 'strike'].includes(foe.mode);
+        const armored = attack.stage !== 2 && (foe.resolve > 0 || (foe.type === 'enforcer' && committed));
+        if (!armored) {
+          foe.stun = attack.stage === 2 ? .58 : .16; foe.mode = 'hurt'; foe.timer = 0;
+          foe.cooldown = attack.stage === 2 ? .55 : .08;
+        }
+        foe.counterReady = attack.stage !== 2;
+        foe.resolve = attack.stage === 2 ? 0 : 1.15;
+        foe.x = clamp(foe.x + hero.direction * move.push * (armored ? .2 : 1), 65, worldWidth - 65);
         hero.hitChain++; hero.chainTime = 2.4; hero.bestCombo = Math.max(hero.bestCombo, hero.hitChain);
         hero.score += damage * Math.min(hero.hitChain, 10);
         events.push({ type: 'hit', x: foe.x, y: 125, damage, finisher: attack.stage === 2, enemyId: foe.id });
@@ -117,31 +136,61 @@ export function stepCombat(hero, enemies, seconds, input, worldWidth) {
   }
   for (const foe of enemies) {
     foe.flash = Math.max(0, foe.flash - dt);
+    foe.resolve = Math.max(0, foe.resolve - dt);
     if (foe.health <= 0) { foe.deathTime = Math.max(0, foe.deathTime - dt); continue; }
     foe.cooldown = Math.max(0, foe.cooldown - dt);
     if (foe.stun > 0) { foe.stun = Math.max(0, foe.stun - dt); continue; }
     const distance = Math.abs(hero.x - foe.x);
-    if (hero.health <= 0 || distance > 600) { foe.mode = 'idle'; continue; }
+    if (hero.health <= 0 || distance > 820) { foe.mode = 'idle'; foe.comboIndex = 0; continue; }
     if (foe.mode === 'windup' || foe.mode === 'strike') {
       foe.timer += dt;
-      if (foe.timer >= foe.windup) {
+      const windup = foe.attackWindup;
+      // Aim early, then commit: a dodge through the last part of the tell makes the attack miss.
+      if (foe.timer < windup * .55) {
+        foe.direction = hero.x >= foe.x ? 1 : -1;
+        const moved = Math.min(36 * dt, Math.max(0, distance - foe.reach + 12));
+        foe.x = clamp(foe.x + foe.direction * moved, 65, worldWidth - 65);
+      }
+      if (foe.timer >= windup) {
         foe.mode = 'strike';
-        if (!foe.attackLanded) {
-          foe.attackLanded = true;
+        const strikeTime = foe.timer - windup;
+        if (strikeTime <= .22) {
           const forward = (hero.x - foe.x) * foe.direction;
-          if (forward >= -20 && forward <= foe.reach) hurtHero(hero, foe, events);
+          const moved = Math.min(foe.lungeSpeed * dt, foe.lungeRemaining, Math.max(0, forward - 56));
+          foe.x = clamp(foe.x + foe.direction * moved, 65, worldWidth - 65);
+          foe.lungeRemaining -= moved;
+        }
+        if (!foe.attackLanded && strikeTime <= .22) {
+          const forward = (hero.x - foe.x) * foe.direction;
+          if (forward >= -20 && forward <= foe.reach) { foe.attackLanded = true; hurtHero(hero, foe, events); }
         }
       }
-      if (foe.timer >= foe.windup + .28) { foe.mode = 'idle'; foe.cooldown = foe.boss ? .62 : .85; }
+      if (foe.timer >= windup + .3) {
+        if (foe.boss && foe.comboIndex === 0 && Math.abs(hero.x - foe.x) < 290 && hero.health > 0) {
+          foe.comboIndex = 1; startEnemyAttack(foe, hero, true);
+        } else { foe.mode = 'recover'; foe.timer = 0; foe.cooldown = foe.boss ? .85 : .7; }
+      }
+    } else if (foe.mode === 'recover') {
+      foe.timer += dt;
+      // A visible backstep gives the player room and lets the next enemy take a turn.
+      const away = foe.x >= hero.x ? 1 : -1;
+      if (distance < foe.attackStart + 35) {
+        const before = foe.x;
+        foe.x = clamp(foe.x + away * 120 * dt, 65, worldWidth - 65);
+        foe.phase = advanceWalk(foe.phase, foe.x - before, foe.cycleDistance, 4);
+      }
+      if (foe.timer >= .36) foe.mode = 'idle';
     } else {
       foe.direction = hero.x >= foe.x ? 1 : -1;
-      if (distance < foe.reach - 10 && foe.cooldown <= 0) {
-        foe.mode = 'windup'; foe.timer = 0; foe.attackLanded = false;
-      } else if (distance > 72) {
-        const moved = Math.min(foe.speed * dt, distance - 72);
+      const allyAttacking = enemies.some(other => other !== foe && other.health > 0 && ['windup', 'strike'].includes(other.mode) && Math.abs(other.x - hero.x) < 420);
+      if (distance <= foe.attackStart && foe.cooldown <= 0 && !allyAttacking) {
+        startEnemyAttack(foe, hero);
+      } else {
+        const standOff = allyAttacking ? foe.attackStart + 45 : foe.reach - 18;
+        const moved = Math.min(foe.speed * dt, Math.max(0, distance - standOff));
         foe.x += foe.direction * moved;
-        foe.phase = advanceWalk(foe.phase, moved, foe.cycleDistance, 4); foe.mode = 'walk';
-      } else foe.mode = 'idle';
+        foe.phase = advanceWalk(foe.phase, moved, foe.cycleDistance, 4); foe.mode = moved > 0 ? 'walk' : 'guard';
+      }
     }
   }
   hero.x = clamp(hero.x, 65, worldWidth - 65);

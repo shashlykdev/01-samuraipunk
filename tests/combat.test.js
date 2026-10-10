@@ -4,7 +4,7 @@ import { createHero, createEnemy, requestJump, requestAttack, requestDodge, step
 import { ENEMY_SPAWNS, WORLD, BLOCK_WIDTH, DISTRICTS } from '../world.js';
 const input = { axis: 0, fast: false, walkCycle: 97 };
 function tick(hero, foes, seconds = .05) { return stepCombat(hero, foes, seconds, input, WORLD.width); }
-function target(x = 560) { const foe = createEnemy('target', x); foe.cooldown = 99; foe.speed = 0; return foe; }
+function target(x = 560) { const foe = createEnemy('target', x); foe.cooldown = 99; foe.speed = 0; foe.attackStart = 0; return foe; }
 
 test('jump has a real arc, rejects double jumps, and lands on the ground', () => {
   const hero = createHero(500);
@@ -99,4 +99,53 @@ test('all eighteen sections have fights and the commander guards the last sectio
   assert.ok(ENEMY_SPAWNS.every(foe => foe.x > 65 && foe.x < WORLD.width - 65));
   const bosses = ENEMY_SPAWNS.filter(foe => foe.boss);
   assert.equal(bosses.length, 1); assert.ok(bosses[0].x > BLOCK_WIDTH * (DISTRICTS.length - 1));
+});
+
+test('enemies close on an ordinary walk and lunge from beyond the first katana cut', () => {
+  const hero = createHero(500), foe = createEnemy('pursuer', 900);
+  const initialGap = foe.x - hero.x;
+  for (let i = 0; i < 20; i++) stepCombat(hero, [foe], .05, { ...input, axis: -1 }, WORLD.width);
+  assert.ok(foe.x - hero.x < initialGap);
+  hero.x = 500; foe.x = 670; foe.mode = 'idle'; foe.cooldown = 0;
+  let lunged = false;
+  for (let i = 0; i < 22; i++) { tick(hero, [foe]); if (foe.mode === 'strike' && foe.x < 620) lunged = true; }
+  assert.ok(lunged); assert.equal(hero.health, 90);
+});
+test('holding light attacks in place leaves a counterattack opening', () => {
+  const hero = createHero(500), foe = createEnemy('counter', 620);
+  foe.health = foe.maxHealth = 500;
+  for (let i = 0; i < 240 && hero.health > 0; i++) { requestAttack(hero); tick(hero, [foe], 1 / 60); }
+  assert.ok(hero.health < 100, 'standing and holding attack should no longer suppress every counter');
+  assert.ok(foe.health < 500, 'light cuts still deal damage');
+});
+test('nearby enemies take turns committing to attacks', () => {
+  const hero = createHero(500), foes = [createEnemy('first', 645), createEnemy('second', 705, 'enforcer')];
+  const attackers = new Set();
+  for (let i = 0; i < 120; i++) {
+    tick(hero, foes);
+    const active = foes.filter(foe => ['windup', 'strike'].includes(foe.mode));
+    assert.ok(active.length <= 1);
+    active.forEach(foe => attackers.add(foe.id));
+  }
+  assert.equal(attackers.size, 2);
+});
+test('a committed lunge cannot turn around after the warning locks', () => {
+  const hero = createHero(500), foe = createEnemy('locked', 650);
+  foe.cooldown = 0; tick(hero, [foe]);
+  while (foe.timer < foe.attackWindup * .65) tick(hero, [foe]);
+  assert.equal(foe.direction, -1);
+  hero.x = foe.x + 120;
+  while (foe.mode === 'windup' || foe.mode === 'strike') tick(hero, [foe]);
+  assert.equal(foe.direction, -1); assert.equal(hero.health, 100);
+});
+test('the commander telegraphs a second strike and then leaves a recovery opening', () => {
+  const hero = createHero(500), foe = createEnemy('commander', 640, 'enforcer', true);
+  foe.cooldown = 0; hero.invulnerable = 10;
+  let followup = false, recovery = false;
+  for (let i = 0; i < 60; i++) {
+    tick(hero, [foe]);
+    if (foe.mode === 'windup' && foe.comboIndex === 1) { followup = true; assert.ok(foe.attackWindup >= .4); }
+    if (followup && foe.mode === 'recover') { recovery = true; break; }
+  }
+  assert.ok(followup); assert.ok(recovery);
 });
